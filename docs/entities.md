@@ -1,4 +1,4 @@
-# Chrysos — Entities
+# Chrysos entities
 
 Summary of entities and attributes to model in the ERD. Every table also has `created_at` / `updated_at` unless noted. All timestamps are UTC. See [features.md](features.md) for behaviour.
 
@@ -55,6 +55,32 @@ Cache populated on demand, not a maintained master list.
 - `timing` (before_open, after_close, unknown)
 - `is_confirmed`
 - `source`
+
+### EarningsExpectation
+What the market expects ahead of an earnings event. Captured more than once as the date approaches.
+- `id`
+- `earnings_event_id` → EarningsEvent
+- `captured_at`
+- `implied_move_pct` (options-implied move to the first expiry after the report)
+- `chain_snapshot_id` → ChainSnapshot (nullable)
+- `eps_estimate` (consensus, nullable)
+- `revenue_estimate` (consensus, nullable)
+- `source`
+
+### FundamentalsSnapshot
+Fundamentals for one reporting period, used by the health score.
+- `id`
+- `symbol` → Ticker
+- `period_end`
+- `period_type` (quarter, annual, ttm)
+- `revenue`
+- `revenue_growth_yoy`
+- `gross_margin`, `operating_margin`, `net_margin`
+- `eps`
+- `pe_ratio` (at capture time)
+- `other` (JSONB, further metrics the provider returns)
+- `source`
+- `captured_at`
 
 ### ChainSnapshot
 One capture of an option chain at a point in time.
@@ -113,6 +139,17 @@ Cached computed values.
 - `snapshot_id` → ChainSnapshot (nullable)
 - `value` (JSONB)
 
+### HealthScore
+In-house grade of a stock's health and profitability. Shared across users.
+- `id`
+- `symbol` → Ticker
+- `as_of`
+- `version` (bumped whenever the scoring formula changes)
+- `score` (0 to 100)
+- `grade` (A to F, derived from `score`)
+- `components` (JSONB: sub-score per factor, such as valuation, margins, revenue)
+- `fundamentals_snapshot_id` → FundamentalsSnapshot
+
 ---
 
 ## Watchlists
@@ -130,6 +167,29 @@ Cached computed values.
 - `sort_order`
 - `note`
 - `added_at`
+
+---
+
+## Research
+
+### TickerResearch
+A user's research file on one ticker. Private to that user; unique on (`user_id`, `symbol`).
+- `id`
+- `user_id` → User
+- `symbol` → Ticker
+- `business_summary` (how the company makes money, its segments and competitors)
+- `last_reviewed_at`
+
+### ResearchNote
+One entry in a research file.
+- `id`
+- `research_id` → TickerResearch
+- `kind` (observation, outside_factor)
+- `title`
+- `body`
+- `impact` (positive, negative, mixed; outside factors only, nullable)
+- `is_active` (false once the factor no longer applies)
+- `observed_at`
 
 ---
 
@@ -217,7 +277,8 @@ One trade idea from plan to close.
 ### TradePlan
 - `id`
 - `position_id` → Position (one-to-one)
-- `thesis`
+- `thesis` (what the trader expects to happen)
+- `entry_reason` (why enter now)
 - `checklist_answers` (JSONB)
 - `planned_size`
 - `max_loss`
@@ -276,6 +337,14 @@ Always recorded, regardless of the enforcement toggle.
 - `position_id` → Position
 - `user_id` → User
 - `body`
+
+### TradeFeeling
+How the trader felt at a point in the trade. Kept apart from journal notes so self-analytics can compare feelings with results.
+- `id`
+- `position_id` → Position
+- `execution_id` → Execution (nullable; null when recorded while planning or holding)
+- `body`
+- `recorded_at`
 
 ---
 
@@ -440,7 +509,7 @@ For the monthly budget guard.
 
 ### JobRun
 - `id`
-- `job_name` (eod_snapshot, screener, news_poll, digest, management_check, review_reminder)
+- `job_name` (eod_snapshot, screener, news_poll, digest, management_check, review_reminder, earnings_capture, fundamentals_refresh)
 - `started_at`
 - `finished_at`
 - `status`
