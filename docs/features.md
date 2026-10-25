@@ -14,29 +14,11 @@ See [architecture.md](architecture.md) for the stack, providers and scheduling, 
 4. Record data from day one. Option chain history and entry snapshots can't be bought cheaply later, so Chrysos collects them before it needs them.
 5. Zero budget first. Use free data and keep LLM spend near USD 5 a month. Pay for more only where a need is proven.
 
-## How the layers connect
-
-```mermaid
-flowchart LR
-  DATA[Data] --> AN[Analysis]
-  AN --> SCR[Screener]
-  PB[Playbooks] -. entry criteria .-> SCR
-  SCR -- hit becomes a plan --> JRN[Planning and journal]
-  PB -. checklist and sizing .-> JRN
-  PB -. management rules .-> ALR[Alerts]
-  AN --> ALR
-  JRN --> ALR
-  JRN --> REV[Review and self-analytics]
-  REV -. rule changes .-> PB
-  DATA --> ML[Models]
-  REV --> ML
-```
-
 ## Playbooks
 
 A playbook is one strategy written as rules. Each part is read by a different layer:
 
-- Entry criteria: conditions a trade must meet, such as FF > 0.2 or no earnings between expirations. The screener uses them as filters, and the journal checks each new trade against them.
+- Entry criteria: conditions a trade must meet, such as FF > 0.2 or no earnings between expirations. The screener uses them as filters, and each new trade is checked against them.
 - Pre-trade checklist: questions to answer before entering, such as thesis, max loss and planned exit.
 - Management rules: when to take profit or close, such as +25% or 7 DTE before front expiry. The alerts engine checks open positions against them.
 - Sizing rules: limits such as the maximum share of the account per trade. Every entry is checked against them, and sizing over time is charted to show trading habits.
@@ -53,13 +35,14 @@ Collects market data and keeps the history that is hard to get later.
 - News: sources managed from the UI (RSS, SEC EDGAR, scrapers). Articles are deduplicated and tagged with tickers without an LLM. Each relevant article is summarised once by the LLM, and that summary is shared across users.
 - Watchlists: public or private ticker groups. They decide which tickers get chain snapshots, GEX and news coverage, and are separate from the screener universe.
 
-## Analysis
+## Analytics
 
 Numbers and research that brokerage platforms don't provide.
 
 - Indicator registry: every calculator is a plugin. Once registered, it appears on the ticker page, as a screener filter, in entry snapshots and as a rule condition, with no other changes. Plugins are versioned so values are only compared within the same formula.
 - Starter indicators: forward factor, IV term structure, expected move, and gamma exposure (per-strike GEX, call and put walls, gamma flip). GEX runs end of day because open interest only updates daily.
-- Health score: an in-house grade of a stock's overall health and profitability, built from fundamentals such as P/E, margins and revenue.
+- Fundamentals indicators: P/E and other fundamentals metrics are registry indicators like the rest, so they can be screener filters and rule conditions. They are added once a fundamentals source is confirmed.
+- Health score: an in-house grade of a stock's overall health and profitability, built from fundamentals such as P/E, margins and revenue. It is a registry indicator too, so a playbook can filter on it.
 - Research notes: a structured record of observations about a stock, how its business works, and outside factors that could help or hurt it.
 - Earnings analysis: gathers what the market expects from a company's upcoming earnings, so trades around the report can be weighed against what is already priced in.
 - Ticker page: everything about one ticker in one view. The price chart overlays news, the user's own entries and exits, and GEX levels. Below it sit the analytics panels, research notes, recent news, and open positions with their rule status.
@@ -72,22 +55,29 @@ Finds trade candidates that match a playbook.
 - It screens in two stages to stay within rate limits. A cheap pass on price, volume and earnings dates cuts about 600 tickers to 50 to 100, and only those get chain fetches and the full rule check.
 - A hit becomes a trade plan in one click, pre-filled with the playbook, legs and the indicator values at screening time.
 
-## Trade planning and journal
+## Journal
 
-Every trade gets a written plan before entry and a record of what happened and why.
+Every trade gets a written plan before entry, and the trader's thinking is recorded as the trade plays out.
+
+- Plan: choose a playbook, state why you're entering, answer the checklist, and set max loss, target and planned exit.
+- Notes: free-form notes on a trade at any point, from planning to close.
+- Feelings: the journal records how the trader felt about the trade, so emotional state can be compared with results later.
+
+## Trade log
+
+The record of what actually happened in each trade. Reviews, alerts and models read from it.
 
 - Positions: one position is one trade idea from plan to close. It holds executions (open, adjust, roll, close), and P&L is tracked across all of them, so a rolled calendar stays one position. Covers stocks and options, single legs and spreads.
-- Plan: choose a playbook, state why you're entering, answer the checklist, and set max loss, target and planned exit.
-- Feelings: the journal records how the trader felt about the trade, so emotional state can be compared with results later.
-- Entry snapshot: when a trade opens, Chrysos saves every relevant indicator value. Self-analytics depends on these.
 - Fast entry: picking a playbook pre-fills the legs, and entering a strike fetches the current mark for the user to correct to the real fill. Fills are entered by hand for now, so entry has to be quick or it won't be done consistently.
+- Entry snapshot: when a trade opens, Chrysos saves every relevant indicator value. Self-analytics depends on these.
 - Soft enforcement: Chrysos always records violations (no plan, incomplete checklist, failed entry criteria, off-plan exit, sizing breach). A per-user toggle only controls whether the UI warns about them, so review statistics stay complete either way. Trades opened without a plan are flagged as unplanned.
 
 ## Alerts
 
 One alert system for everything that needs the user's attention.
 
-- Alert types: high-importance news on held or watched tickers (8-K filings, halts, earnings, keyword matches), management rule triggers, reminders such as closing a position, and user-defined rules. All use the shared rule format, and each rule has a cooldown.
+- Alert types: high-importance news on held or watched tickers (8-K filings, halts, earnings, keyword matches), management rule triggers, screener hits, reminders such as closing a position, and user-defined rules. All use the shared rule format, and each rule has a cooldown.
+- Screener hits: each nightly screener run sends one alert listing its top hits, rather than one alert per hit.
 - Session digests: four a day at the start of each US session (pre-market, regular, post-market, overnight). Each covers the user's relevant news, notable price moves, and open positions against their management rules. The rules produce the suggestions; the LLM only writes the summary around them, within a monthly budget cap.
 - Delivery: a Discord webhook per user, with in-app notifications later.
 
@@ -102,8 +92,10 @@ Learning from the user's own trades.
 
 Once enough data exists, two kinds of model can build on it:
 
-- On the user's trades: an ML model or LLM that finds which entry conditions go with good results, extending self-analytics.
+- On the user's trades: an ML model or LLM that reads the trade log (entry snapshots, playbook versions and outcomes) and finds which entry conditions go with good results, extending self-analytics.
 - On market history: a custom model trained on stored chain snapshots and backtests that recognises past patterns when they show up again.
+
+Findings reach the user as playbook change proposals in the weekly review, where they are applied or rejected like any other proposal.
 
 ## Later
 

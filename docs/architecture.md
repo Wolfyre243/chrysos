@@ -80,6 +80,8 @@ Every indicator or calculator is a plugin registered in code. Each plugin declar
 
 The output type selects the visualisation on the ticker page, and scalar outputs can be used as screener filters. Snapshots store the indicator version, so historical values are only compared within the same formula version. New stock or option indicators can be added without changes elsewhere.
 
+Fundamentals metrics such as P/E, and the in-house health score, are registered the same way (`scope` stock, `requires` fundamentals), so they work as screener filters and rule conditions. They wait on confirming a fundamentals source (see "To verify" under Market data).
+
 ## Rule engine
 
 A single rule format and evaluator serves four features:
@@ -111,6 +113,7 @@ The universe is the S&P 500 plus liquid optionable names, screened nightly as a 
 
 1. Stage 1 (cheap, whole universe): filter on price, average volume, options volume and earnings date using snapshot-level data. Expected to cut roughly 600 tickers to 50 to 100.
 2. Stage 2 (expensive, survivors only): fetch only the 2 or 3 expirations near the target DTE and only near-the-money strikes, then evaluate the playbook's entry rules.
+3. Save the hits as screener results and send one alert for the run listing the top hits.
 
 The rate limiter spreads calls across the overnight window.
 
@@ -140,6 +143,7 @@ The LLM never reads raw articles. Ingestion runs in five steps:
 - In-app notifications come later as a second `Notifier` channel.
 - Every delivery is logged with status and errors.
 - Each alert rule has a cooldown to avoid repeated alerts.
+- Screener hits are batched: one message per screener run, not one per hit.
 - The weekly review reminder is a Discord message linking to the review.
 
 ## Scheduling and time
@@ -157,7 +161,7 @@ The LLM never reads raw articles. Ingestion runs in five steps:
 2. Data layer (moomoo adapter, rate limiter, cache, end-of-day chain snapshots)
 3. Analytics registry with the starter set (forward factor, term structure, expected move, GEX)
 4. Rule engine and playbooks (templates, user overrides, versioning, change proposals)
-5. Trade journal (positions, executions, plans, entry snapshots, soft enforcement, violations)
+5. Journal and trade log (plans, notes, feelings, positions, executions, entry snapshots, soft enforcement, violations)
 6. Ticker page (chart with trade markers and GEX levels, analytics panels)
 7. Weekly review
 
@@ -165,5 +169,12 @@ The data layer comes first so chain snapshot history starts accumulating as earl
 
 ### MVP+1: automation
 
-8. Screeners (two-stage, nightly, calendar and vertical)
+8. Screeners (two-stage, nightly, calendar and vertical, one Discord alert per run with the top hits)
 9. News (configurable sources, ticker tagging, session digests, rule-based Discord alerts, news markers on the ticker page)
+
+### Later
+
+10. Fundamentals indicators (P/E) and the health score, once a fundamentals source is confirmed
+11. Research notes
+12. Earnings analysis
+13. Models on the user's trades and on stored market history

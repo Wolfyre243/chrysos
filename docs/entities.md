@@ -68,7 +68,7 @@ What the market expects ahead of an earnings event. Captured more than once as t
 - `source`
 
 ### FundamentalsSnapshot
-Fundamentals for one reporting period, used by the health score.
+Fundamentals for one reporting period, used by fundamentals indicators such as P/E and the health score.
 - `id`
 - `symbol` → Ticker
 - `period_end`
@@ -128,7 +128,7 @@ For quota visibility.
 - `output_type` (scalar, per_strike_series, term_curve)
 
 ### IndicatorResult
-Cached computed values.
+Cached computed values. Shared across users.
 - `id`
 - `symbol` → Ticker
 - `indicator_id`
@@ -137,18 +137,10 @@ Cached computed values.
 - `params_hash`
 - `as_of`
 - `snapshot_id` → ChainSnapshot (nullable)
+- `fundamentals_snapshot_id` → FundamentalsSnapshot (nullable, fundamentals indicators only)
 - `value` (JSONB)
 
-### HealthScore
-In-house grade of a stock's health and profitability. Shared across users.
-- `id`
-- `symbol` → Ticker
-- `as_of`
-- `version` (bumped whenever the scoring formula changes)
-- `score` (0 to 100)
-- `grade` (A to F, derived from `score`)
-- `components` (JSONB: sub-score per factor, such as valuation, margins, revenue)
-- `fundamentals_snapshot_id` → FundamentalsSnapshot
+P/E and the health score are indicators with `scope` stock and `requires` fundamentals, so they have no tables of their own. The health score's `value` holds `score` (0 to 100), `grade` (A to F, derived from `score`) and `components` (sub-score per factor, such as valuation, margins, revenue).
 
 ---
 
@@ -249,16 +241,51 @@ Structural changes queued for the weekly review.
 - `user_id` → User
 - `proposed_change` (JSONB)
 - `reason`
+- `source` (user, self_analytics, model)
 - `status` (pending, applied, rejected)
 - `resolved_in_review_id` → WeeklyReview (nullable)
 - `resolved_at`
 
 ---
 
-## Trade journal
+## Journal
+
+The trader's plan and thinking around a position.
+
+### TradePlan
+- `id`
+- `position_id` → Position (one-to-one)
+- `thesis` (what the trader expects to happen)
+- `entry_reason` (why enter now)
+- `checklist_answers` (JSONB)
+- `planned_size`
+- `max_loss`
+- `profit_target`
+- `planned_exit`
+- `is_complete` (bool)
+
+### JournalNote
+- `id`
+- `position_id` → Position
+- `user_id` → User
+- `body`
+
+### TradeFeeling
+How the trader felt at a point in the trade. Kept apart from journal notes so self-analytics can compare feelings with results.
+- `id`
+- `position_id` → Position
+- `execution_id` → Execution (nullable; null when recorded while planning or holding)
+- `body`
+- `recorded_at`
+
+---
+
+## Trade log
+
+The record of what happened in each trade.
 
 ### Position
-One trade idea from plan to close.
+One trade idea from plan to close. Created with the plan, in status `planned`.
 - `id`
 - `user_id` → User
 - `playbook_id` → Playbook
@@ -273,18 +300,6 @@ One trade idea from plan to close.
 - `fees_total`
 - `screener_result_id` → ScreenerResult (nullable, origin)
 - `tags`
-
-### TradePlan
-- `id`
-- `position_id` → Position (one-to-one)
-- `thesis` (what the trader expects to happen)
-- `entry_reason` (why enter now)
-- `checklist_answers` (JSONB)
-- `planned_size`
-- `max_loss`
-- `profit_target`
-- `planned_exit`
-- `is_complete` (bool)
 
 ### Execution
 - `id`
@@ -331,20 +346,6 @@ Always recorded, regardless of the enforcement toggle.
 - `actual` (JSONB)
 - `detected_at`
 - `acknowledged` (bool)
-
-### JournalNote
-- `id`
-- `position_id` → Position
-- `user_id` → User
-- `body`
-
-### TradeFeeling
-How the trader felt at a point in the trade. Kept apart from journal notes so self-analytics can compare feelings with results.
-- `id`
-- `position_id` → Position
-- `execution_id` → Execution (nullable; null when recorded while planning or holding)
-- `body`
-- `recorded_at`
 
 ---
 
@@ -475,10 +476,11 @@ Shared across users, managed from the UI.
 ### AlertEvent
 - `id`
 - `user_id` → User
-- `kind` (news, alert_rule, management_rule, review_reminder)
+- `kind` (news, alert_rule, management_rule, screener_hit, review_reminder)
 - `alert_rule_id` → AlertRule (nullable)
 - `position_id` → Position (nullable)
 - `article_id` → NewsArticle (nullable)
+- `screener_run_id` → ScreenerRun (nullable; one batched alert per run)
 - `payload` (JSONB)
 - `triggered_at`
 
