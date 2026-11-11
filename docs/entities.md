@@ -187,44 +187,81 @@ One entry in a research file.
 
 ## Playbooks and rules
 
-### PlaybookTemplate *(code)*
-- `key` (calendar, vertical, …)
+### Structure *(code)*
+What is traded: the legs and their mechanics.
+- `key` (calendar, vertical, diagonal, double_calendar, iron_condor, iron_fly, straddle, stock, …)
 - `version`
 - `name`
-- `strategy_type`
-- `leg_template`
-- default entry rules, checklist, management rules, sizing rules
+- `legs` (named slots with side, right, quantity ratio)
+- `selector_slots` (what an edge must fill, such as `front_expiry`, `back_expiry`, `strike`, `right`)
+- `exposes` (fields rules can read, such as `legs.front.dte`, `net_debit`, `max_loss`)
+- `actions` (lifecycle actions, such as `roll(front)`)
+
+### Edge *(code)*
+Why the trade is taken.
+- `key` (forward_factor, earnings_iv_crush, …)
+- `version`
+- `name`
+- `structures` (compatible structure keys)
+- `params_schema` (name, type, default, allowed range, description)
+- `selectors` (leg selector binding per compatible structure)
+- default entry rules, management rules, sizing rules, checklist
+
+### Addon *(code)*
+Cross-cutting rule pack. Adds rules only; never sets selectors.
+- `key` (liquidity_baseline, risk_2pct, checklist_core, …)
+- `version`
+- `name`
+- `structures` (optional; applies to all when empty)
+- `params_schema`
+- default rules and checklist items
+
+### PlaybookPreset *(code)*
+A named starting combination, such as "FF calendar".
+- `key`
+- `name`
+- `structure_key`
+- `edge_key`
+- `addon_keys`
+- `param_defaults` (optional, on top of the blocks' defaults)
 
 ### Playbook
-A user's copy of a template.
+A user's combination of one structure, one edge and any add-ons. `structure_key`, `edge_key` and `addon_keys` mirror the current version; changing any of them is a structural change and creates a new version.
 - `id`
 - `user_id` → User
-- `template_key`
 - `name`
-- `strategy_type`
+- `preset_key` (nullable; null when built from scratch)
+- `structure_key`
+- `edge_key` (must list `structure_key` as compatible)
+- `addon_keys`
 - `current_version_id` → PlaybookVersion
 - `is_active`
 
 ### PlaybookVersion
-Immutable snapshot of the effective rules at a point in time.
+Immutable snapshot of the effective playbook at a point in time.
 - `id`
 - `playbook_id` → Playbook
 - `version_number`
-- `template_version`
-- `overrides` (JSONB, user changes on top of the template)
+- `structure_key`, `structure_version`
+- `edge_key`, `edge_version`
+- `addons` (JSONB: add-on key → version)
+- `params` (JSONB, resolved values: block defaults plus user overrides)
+- `overrides` (JSONB, user changes keyed by block and rule id: parameter values, disabled rules, edited rules, extra user rules and checklist items)
+- `selectors` (JSONB, resolved leg selectors for the structure)
 - `entry_rules` (JSONB, resolved)
 - `checklist` (JSONB, resolved)
 - `management_rules` (JSONB, resolved)
 - `sizing_rules` (JSONB, resolved)
-- `leg_template` (JSONB)
-- `change_type` (initial, threshold, structural)
+- `change_type` (initial, threshold, structural, block_update)
 - `created_from_review_id` → WeeklyReview (nullable)
 
 ### Rule *(value object, stored as JSONB)*
 Shared format used in PlaybookVersion and AlertRule.
 - `id` (stable within its parent)
 - `kind` (entry, management, sizing, alert)
-- `condition` (indicator or field reference, params, op, value; or `all` / `any` group)
+- `condition` (indicator or field reference, params, op, value; or `all` / `any` group). Inside playbooks, params and values may reference `$legs.<slot>` and `$params.<name>`
+- `source` (block that contributed it, such as `edge:forward_factor` or `addon:risk_2pct`, or `user`; playbook rules only)
+- `stage` (derived for entry rules: `stage1` if it needs only snapshot-level data, `stage2` if it needs a chain)
 - `description`
 - `severity` (info, warning, critical)
 
@@ -233,6 +270,7 @@ Shared format used in PlaybookVersion and AlertRule.
 - `prompt`
 - `answer_type` (text, bool, number)
 - `required`
+- `source` (`edge:<key>`, `addon:<key>` or `user`)
 
 ### PlaybookChangeProposal
 Structural changes queued for the weekly review.
@@ -241,7 +279,7 @@ Structural changes queued for the weekly review.
 - `user_id` → User
 - `proposed_change` (JSONB)
 - `reason`
-- `source` (user, self_analytics, model)
+- `source` (user, self_analytics, model, block_update)
 - `status` (pending, applied, rejected)
 - `resolved_in_review_id` → WeeklyReview (nullable)
 - `resolved_at`
@@ -291,7 +329,8 @@ One trade idea from plan to close. Created with the plan, in status `planned`.
 - `playbook_id` → Playbook
 - `playbook_version_id` → PlaybookVersion
 - `symbol` → Ticker
-- `strategy_type`
+- `structure_key` (copied from the playbook version, for grouping)
+- `edge_key` (copied from the playbook version, for grouping)
 - `status` (planned, open, closed, cancelled)
 - `is_planned` (bool, plan existed before first execution)
 - `opened_at`
@@ -358,7 +397,7 @@ Always recorded, regardless of the enforcement toggle.
 - `week_end`
 - `status` (draft, submitted)
 - `submitted_at`
-- `stats` (JSONB, auto-generated numbers by playbook)
+- `stats` (JSONB, auto-generated numbers by playbook, structure and edge)
 - `adherence_score`
 - `went_well`
 - `biggest_mistake`
@@ -385,7 +424,7 @@ Always recorded, regardless of the enforcement toggle.
 - `user_id` → User
 - `playbook_id` → Playbook
 - `name`
-- `stage1_filters` (JSONB)
+- `stage1_filters` (JSONB, extra filters on top of those derived from the playbook's rules)
 - `schedule`
 - `is_enabled`
 
