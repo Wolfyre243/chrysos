@@ -22,9 +22,37 @@ A playbook is one strategy written as rules. Each part is read by a different la
 - Pre-trade checklist: questions to answer before entering, such as thesis, max loss and planned exit.
 - Management rules: when to take profit or close, such as +25% or 7 DTE before front expiry. The alerts engine checks open positions against them.
 - Sizing rules: limits such as the maximum share of the account per trade. Every entry is checked against them, and sizing over time is charted to show trading habits.
-- Leg template: the trade's structure, used to pre-fill entry.
+- Leg selection: the trade's structure and how its expiries and strikes are picked, used to pre-fill entry and to tell the screener which part of the chain to fetch.
 
-Each user starts from a built-in template (calendar, vertical) and overrides thresholds; template updates still reach fields the user hasn't changed. Every change creates a new version, and each trade records the version it was entered under. Threshold tweaks apply immediately. Structural changes, such as adding or removing a rule, wait for the weekly review so rules don't get rewritten in the middle of a trade.
+### Building blocks
+
+A playbook is not one fixed template. It is put together from blocks defined in code, because what a trade is and why it is taken are separate choices:
+
+- Structure: what is traded, meaning the legs. Calendar, vertical, diagonal, iron condor, straddle, plain stock. A structure knows its leg slots (such as `front` and `back`), its P&L and max-loss maths, and what a roll means.
+- Edge: why the trade is taken, meaning the mispricing or event being bet on. Forward factor (term-structure mispricing) and earnings IV crush are the first two. An edge brings the entry and management rules, the checklist items, the leg selectors (how expiries and strikes are picked), and named parameters such as `ff_min`. It lists the structures it works with.
+- Add-ons: small rule packs that apply across edges, such as a liquidity baseline (open interest, bid-ask width), a 2% risk sizing rule, or a core checklist.
+
+A playbook is one structure, exactly one edge, any number of add-ons, plus the user's parameter overrides and extra rules. Only the edge picks the legs; add-ons only add rules, so blocks never compete over leg selection.
+
+The same structure can carry different edges, and the same edge can sit on different structures:
+
+| Playbook           | Structure       | Edge                |
+| ------------------ | --------------- | ------------------- |
+| FF calendar        | calendar        | `forward_factor`    |
+| IV crush calendar  | calendar        | `earnings_iv_crush` |
+| IV crush condor    | iron condor     | `earnings_iv_crush` |
+| FF double calendar | double calendar | `forward_factor`    |
+
+Presets are ready-made combinations (such as "FF calendar" = calendar + `forward_factor` + liquidity baseline + 2% risk) that users start from. Users can also put together their own combination from any compatible structure, edge and add-ons. Structures, edges and add-ons themselves are only defined in code.
+
+### Parameters and changes
+
+Thresholds are named parameters, not numbers written into rules: a rule says FF > `ff_min`, and the playbook sets `ff_min` to 0.2. This splits changes cleanly:
+
+- Threshold changes: changing a parameter value. They apply immediately.
+- Structural changes: changing the structure, edge or add-ons, or adding, removing or rewriting a rule. They wait for the weekly review so rules don't get rewritten in the middle of a trade.
+
+Every change creates a new version, and each trade records the version it was entered under. Improvements to a structure, edge or add-on in code still reach fields the user hasn't overridden: new parameter defaults apply like threshold changes, and new or changed rules arrive as change proposals in the weekly review. Parameters are also what backtesting sweeps when looking for the best configuration of a playbook.
 
 ## Data
 
@@ -51,8 +79,8 @@ Numbers and research that brokerage platforms don't provide.
 
 Finds trade candidates that match a playbook.
 
-- Each screener runs one playbook's entry criteria every night across the S&P 500 plus liquid optionable names. The first two cover calendar spreads and vertical spreads.
-- It screens in two stages to stay within rate limits. A cheap pass on price, volume and earnings dates cuts about 600 tickers to 50 to 100, and only those get chain fetches and the full rule check.
+- Each screener runs one playbook's entry criteria every night across the S&P 500 plus liquid optionable names. The first ones cover calendar and vertical playbooks.
+- It screens in two stages to stay within rate limits. A cheap pass on price, volume and earnings dates cuts about 600 tickers to 50 to 100, and only those get chain fetches and the full rule check. The playbook's rules are split between the stages automatically by the data each one needs, and the edge's leg selectors decide which expirations and strikes are fetched (around earnings for IV crush, around the target DTEs for forward factor).
 - A hit becomes a trade plan in one click, pre-filled with the playbook, legs and the indicator values at screening time.
 
 ## Journal
@@ -68,7 +96,7 @@ Every trade gets a written plan before entry, and the trader's thinking is recor
 The record of what actually happened in each trade. Reviews, alerts and models read from it.
 
 - Positions: one position is one trade idea from plan to close. It holds executions (open, adjust, roll, close), and P&L is tracked across all of them, so a rolled calendar stays one position. Covers stocks and options, single legs and spreads.
-- Fast entry: picking a playbook pre-fills the legs, and entering a strike fetches the current mark for the user to correct to the real fill. Fills are entered by hand for now, so entry has to be quick or it won't be done consistently.
+- Fast entry: picking a playbook pre-fills the legs using its edge's leg selectors, and entering a strike fetches the current mark for the user to correct to the real fill. Fills are entered by hand for now, so entry has to be quick or it won't be done consistently.
 - Entry snapshot: when a trade opens, Chrysos saves every relevant indicator value. Self-analytics depends on these.
 - Soft enforcement: Chrysos always records violations (no plan, incomplete checklist, failed entry criteria, off-plan exit, sizing breach). A per-user toggle only controls whether the UI warns about them, so review statistics stay complete either way. Trades opened without a plan are flagged as unplanned.
 
@@ -85,8 +113,8 @@ One alert system for everything that needs the user's attention.
 
 Learning from the user's own trades.
 
-- Weekly review: scheduled, mostly generated, and about 15 minutes long. It shows results and rule adherence by playbook, then the user grades each closed trade's process from A to F. Grades are crossed with outcome: a good process with a loss counts as variance, and a bad process with a win is flagged hardest. The review also checks open positions against their plans, takes a short reflection, applies or rejects pending playbook changes, and ends with one commitment that the next review checks. Reviews lock on submission, completed reviews build a streak, and monthly and quarterly views roll up from them.
-- Self-analytics: once enough trades exist, outcomes are compared against entry conditions. For example, do calendar spreads entered with FF > 0.3 do better than those entered with FF > 0.2? This works because every trade carries its entry snapshot and playbook version. Sizing history is charted here too.
+- Weekly review: scheduled, mostly generated, and about 15 minutes long. It shows results and rule adherence by playbook, structure and edge, then the user grades each closed trade's process from A to F. Grades are crossed with outcome: a good process with a loss counts as variance, and a bad process with a win is flagged hardest. The review also checks open positions against their plans, takes a short reflection, applies or rejects pending playbook changes, and ends with one commitment that the next review checks. Reviews lock on submission, completed reviews build a streak, and monthly and quarterly views roll up from them.
+- Self-analytics: once enough trades exist, outcomes are compared against entry conditions. For example, do FF calendars entered with FF > 0.3 do better than those entered with FF > 0.2? Results can be grouped by edge across structures (how do IV crush trades do, whatever the structure?) or by structure across edges. This works because every trade carries its entry snapshot, playbook version, structure and edge. Sizing history is charted here too.
 
 ## Models (later)
 

@@ -95,24 +95,80 @@ A single rule format and evaluator serves four features:
 
 A rule references either an analytics registry indicator or a known field (position state, earnings, price, news). Rules can be combined with `all` / `any` groups.
 
+Inside a playbook, rules can also use two kinds of reference, resolved before evaluation:
+
+- `$legs.<slot>`: a leg slot of the playbook's structure (such as `$legs.front`), bound to the expiry and strike the edge's selectors picked for this ticker or position. This lets one edge work on a calendar, a diagonal or a double calendar without hardcoding DTEs.
+- `$params.<name>`: a named playbook parameter. Changing its value is a threshold change; changing the rule itself is a structural change.
+
 ```
-{ "indicator": "forward_factor", "params": { "front_dte": 30, "back_dte": 60 }, "op": ">", "value": 0.2 }
-{ "field": "position.pnl_pct", "op": ">=", "value": 25 }
+{ "indicator": "forward_factor", "params": { "front": "$legs.front", "back": "$legs.back" }, "op": ">", "value": "$params.ff_min" }
+{ "field": "earnings.between", "params": { "from": "$legs.front.expiry", "to": "$legs.back.expiry" }, "op": "==", "value": false }
+{ "field": "legs.front.dte", "op": "<=", "value": "$params.exit_front_dte" }
+{ "field": "position.pnl_pct", "op": ">=", "value": "$params.take_profit_pct" }
 { "field": "earnings.days_until", "op": "<", "value": 7 }
 ```
 
-## Playbook storage
+User alert rules use the same format with literal values, since they have no playbook to resolve references against.
 
-- Default templates (calendar, vertical, etc.) are hardcoded and versioned in code.
-- Each user's copy stores overrides on top of its template, so template improvements still reach fields the user has not overridden.
-- Every playbook change creates a new playbook version. Structural changes are stored as proposals until the weekly review applies or rejects them.
+## Playbooks
+
+A playbook is put together from three kinds of block, all registered and versioned in code like analytics plugins. Users choose and combine blocks; they don't define new ones in the UI.
+
+### Structures
+
+What is traded. Each structure declares:
+
+| Field            | Meaning                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `key`, `name`    | Identifier and display name (`calendar`, `vertical`, `iron_condor`, `stock`, …)            |
+| `version`        | Bumped whenever legs, maths or exposed fields change                                       |
+| `legs`           | Named leg slots with side, right and quantity ratio (calendar: `front` sells, `back` buys) |
+| `selector_slots` | The slots the edge must fill (calendar: `front_expiry`, `back_expiry`, `strike`, `right`)  |
+| `exposes`        | Fields rules can read (`legs.front.dte`, `net_debit`, `max_loss`, width, …)                |
+| `actions`        | Lifecycle actions the trade log understands (calendar: `roll(front)`)                      |
+
+Structures own the mechanics: building the legs, P&L and max-loss maths, adding up greeks, and what an adjustment or roll means for a position.
+
+### Edges
+
+Why the trade is taken. Each edge declares:
+
+| Field           | Meaning                                                                |
+| --------------- | ---------------------------------------------------------------------- |
+| `key`, `name`   | Identifier and display name (`forward_factor`, `earnings_iv_crush`, …) |
+| `version`       | Bumped whenever rules, selectors or parameter defaults change          |
+| `structures`    | Structures the edge works with                                         |
+| `params_schema` | Parameter schema: name, type, default, allowed range, description      |
+| `selectors`     | Leg selectors per supported structure                                  |
+| `rules`         | Default entry, management and sizing rules                             |
+| `checklist`     | Default checklist items                                                |
+
+Selectors are data, so fast entry, the screener and backtests all pick legs the same way. Expiry selectors include `nearest(dte=…)`, `first_after(event)` and `next_after(slot, min_gap=…)`; strike selectors include `atm`, `delta(…)`, `pct_otm(…)` and `expected_move(…)`. Because structures have different slots (a condor has one expiry, a calendar two), an edge gives one selector binding per structure it supports rather than a single universal set.
+
+Example: `forward_factor` on a calendar picks `front_expiry = nearest(dte=$params.front_dte)`, `back_expiry = nearest(dte=$params.back_dte)` and an ATM strike, enters when FF > `ff_min` with no earnings between the legs, and closes at `exit_front_dte`. `earnings_iv_crush` on a calendar picks `front_expiry = first_after(earnings)` and `back_expiry = next_after(front, min_gap=21d)`, enters within `entry_days` of the report, and closes the day after it.
+
+### Add-ons
+
+Small rule packs that apply across edges (`liquidity_baseline`, `risk_2pct`, `checklist_core`). They declare `key`, `version`, `params_schema`, `rules` and `checklist`, and optionally the structures they apply to. Add-ons only add rules; they never set selectors.
+
+### Composition and storage
+
+- A playbook is one structure, exactly one edge (compatible with the structure), any number of add-ons, plus user overrides.
+- Presets (FF calendar, IV crush calendar, …) are named combinations defined in code that users start from.
+- Overrides store only what the user changed: parameter values, disabled rules, extra user rules and checklist items, and edits to individual rules. They are keyed by the block and rule id they apply to.
+- Resolving a playbook merges structure, edge and add-ons in that order, applies the overrides, and tags every resulting rule and checklist item with its `source` (edge, add-on or user). Violations and adherence stats can then point at the block a broken rule came from.
+- Every playbook change creates a new immutable version recording the version of each block and the resolved rules, selectors and parameters.
+- Changing a parameter value is a threshold change and applies immediately. Changing the structure, edge or add-ons, or adding, removing or editing a rule, is a structural change and is stored as a proposal until the weekly review applies or rejects it.
+- When a block's version is bumped in code, playbooks using it pick up new parameter defaults for parameters they haven't overridden in a new `block_update` version, which applies immediately like a threshold change. New or changed rules and selectors arrive as change proposals (source `block_update`) for the next weekly review.
 
 ## Screener pipeline
 
 The universe is the S&P 500 plus liquid optionable names, screened nightly as a background job. Rate limits are handled by doing less work:
 
 1. Stage 1 (cheap, whole universe): filter on price, average volume, options volume and earnings date using snapshot-level data. Expected to cut roughly 600 tickers to 50 to 100.
-2. Stage 2 (expensive, survivors only): fetch only the 2 or 3 expirations near the target DTE and only near-the-money strikes, then evaluate the playbook's entry rules.
+2. Stage 2 (expensive, survivors only): run the edge's leg selectors to decide which expirations to fetch (near the target DTEs for forward factor, either side of the earnings date for IV crush), fetch only those and near-the-money strikes, then evaluate the remaining entry rules.
+
+Rules are assigned to a stage automatically: a rule whose indicators and fields need only snapshot-level data (price, volume, earnings dates, fundamentals) runs in stage 1, and any rule that needs `chain` runs in stage 2. The IV crush edge's "earnings within N days" rule is therefore a stage 1 filter without being written as one. A screener's own `stage1_filters` add to the derived ones; they don't replace them.
 3. Save the hits as screener results and send one alert for the run listing the top hits.
 
 The rate limiter spreads calls across the overnight window.
