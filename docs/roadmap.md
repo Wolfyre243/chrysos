@@ -31,3 +31,8 @@ The data layer here should be done quick to prototype the entire system, but kep
 - Research notes
 - Earnings analysis
 - Models on the user's trades and on stored market history
+- SEC filing parser that reads specific filing sections into structured data
+- Automatic fill import from moomoo, with unplanned-trade detection
+- Parsing pasted moomoo order confirmations for faster entry
+- Sharing watchlists with specific users
+- More indicators: IV rank and percentile once history exists, skew

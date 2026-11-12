@@ -1,6 +1,6 @@
-# Chrysos entities
+# Data model
 
-Summary of entities and attributes to model in the ERD. Every table also has `created_at` / `updated_at` unless noted. All timestamps are UTC. See [features.md](features.md) for behaviour.
+Summary of entities and attributes to model in the ERD. Every table also has `created_at` / `updated_at` unless noted. All timestamps are UTC. See [concepts](../README.md#concepts) for behaviour.
 
 Items marked *(code)* are defined in code, not stored as tables, but are referenced by keys from tables.
 

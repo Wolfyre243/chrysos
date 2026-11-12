@@ -4,25 +4,45 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository state
 
-This repo is in the design phase: it holds only design docs, no application code yet, so there are no build, lint or test commands. The design lives in:
+Chrysos is mostly design docs plus a freshly scaffolded backend. `server/` holds a FastAPI app with only a healthcheck route; there is no frontend, database, test suite or Docker setup yet. The design is the source of truth for what gets built:
 
-- `docs/features.md`: what Chrysos does and the principles behind it
-- `docs/architecture.md`: stack, deployment, adapters, pipelines, scheduling
-- `docs/entities.md`: the data model (ERD source of truth)
+- `docs/README.md`: index of all docs
+- `docs/concepts/`: what Chrysos does and how each part works (playbooks, rule engine, screener, journal, news, alerts, review, …); start with `overview.md`
+- `docs/guides/`: short how-to tutorials for housekeeping tasks
+- `docs/references/`: lookup material, including `data-model.md` (ERD source of truth) and `GLOSSARY.md`
+- `docs/architecture.md`: stack, deployment and external dependencies (adapters, providers, news feeds)
 - `docs/roadmap.md`: phase scope (Phase 0 MVP, Phase 1, later)
-- `docs/diagrams.drawio`: overall design diagram
+- `docs/diagrams/*.drawio`: design diagrams
 
-The docs cross-reference each other. When a change touches behaviour, the data model and the architecture, update all affected docs so they stay consistent (e.g. a new entity in `entities.md` should match the feature in `features.md` and any job, adapter or pipeline in `architecture.md`).
+The docs cross-reference each other. When a change touches behaviour, the data model and the architecture, update all affected docs so they stay consistent (e.g. a new entity in `references/data-model.md` should match its concept page in `concepts/`, and any new adapter or provider should appear in `architecture.md`). Add new docs to `docs/README.md`. Check `roadmap.md` before building something, so Phase 1 or later work isn't pulled into the MVP.
 
-Prototype calculators and indicators are built in the sibling repo `chrysos-lab` (Python, uv, yfinance), kept apart from data fetching and UI before they move into Chrysos.
+Prototype calculators and indicators are built first in the sibling repo `chrysos-lab` (Python, uv, yfinance), as plain typed modules kept apart from data fetching and UI, before they move into Chrysos as analytics plugins.
+
+## Commands
+
+Backend, run from `server/` (Python via uv):
+
+```bash
+uv sync                      # install deps, including the dev group (ruff)
+uv run fastapi dev main.py   # dev server with reload
+uv run ruff check .          # lint
+uv run ruff format .         # format
+```
+
+Code style is set in `server/ruff.toml`: 80-column lines, double quotes, 2-space indents.
+
+`server/.claude/skills/fastapi` (and its `.agents/skills` twin) is a symlink into `.venv`, managed by Library Skills, so it is broken until `uv sync` has run. Repair managed skill links with `uvx library-skills --claude` rather than editing them by hand.
 
 ## What Chrysos is
 
-A personal command center for stocks and options trading for two users. It records trades and never places orders. Everything revolves around playbooks: one strategy definition drives the screener, the pre-trade checklist, management alerts and the weekly review.
+A self-hosted personal command center for stocks and options trading, for a small number of users created from a CLI script. It records trades and never places orders. Everything revolves around playbooks: one strategy definition drives the screener, the pre-trade checklist, management alerts and the weekly review.
 
 ## Planned stack
 
-React Router + shadcn/ui frontend, TradingView `lightweight-charts`, FastAPI backend, Postgres, Docker Compose (`postgres`, `api`, `worker`, `web`, `opend`). Market data is moomoo OpenAPI via OpenD long term; Phase 0 uses yfinance as the `MarketDataProvider` while OpenD is evaluated. LLM is OpenAI, notifications are Discord webhooks.
+- Frontend: TypeScript (pnpm), React Router (framework mode), shadcn/ui, Redux Toolkit with RTK Query, TradingView `lightweight-charts`.
+- Backend: Python (uv), FastAPI, SQLModel, Alembic migrations, PostgreSQL.
+- Docker Compose services: `postgres`, `api`, `worker`, `web`, `opend`. During development OpenD runs natively on Windows.
+- Market data: moomoo OpenAPI via OpenD long term; Phase 0 uses yfinance as the `MarketDataProvider` while OpenD is evaluated. LLM is OpenAI; notifications are Discord webhooks.
 
 ## Core design ideas (read before designing or implementing anything)
 
@@ -36,3 +56,17 @@ React Router + shadcn/ui frontend, TradingView `lightweight-charts`, FastAPI bac
 - **Zero budget**: respect provider quotas with a token-bucket rate limiter (spread work out, never evade limits); the screener is two-stage (cheap filter on the whole universe, chain fetches only for survivors). LLM spend is capped near USD 5/month with a budget guard; the LLM never reads raw articles, only headline + lead, and summaries are cached and shared across users.
 - **Time**: store UTC; market-session logic runs in `America/New_York`; user schedules use each user's timezone.
 - **Data ownership**: journals, positions, playbooks, reviews, alerts, screeners and digests are private per user; watchlists are public or private; market data, chain snapshots, news and summaries are shared.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for Wolfyre243/chrysos (gh CLI). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `docs/references/GLOSSARY.md` plus `docs/adr/`. See `docs/agents/domain.md`.
