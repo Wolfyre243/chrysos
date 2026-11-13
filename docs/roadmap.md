@@ -17,16 +17,17 @@ The data layer here should be done quick to prototype the entire system, but kep
 
 ## Phase 1
 
-- Screeners (two-stage, nightly, calendar and vertical, one Discord alert per run with the top hits)
-- News (configurable sources, ticker tagging, session digests, rule-based Discord alerts, news markers on the ticker page)
+- Screeners (two-stage, nightly, calendar and vertical, hits listed in the app)
+- News (configurable sources, ticker tagging, session digests read in the app, Discord alerts for high-importance public news, news markers on the ticker page)
 - Preserve historical data
   - Once the integration of MooMoo's OpenD is ready, start storing data for future needs
 - Backtesting
   - Run playbooks against historical data and sweep their named parameters (and swap edges or structures) to find the best configuration for each.
-- Alerts
+- Alerts (public alerts to the shared Discord server; private alerts are recorded and shown in the app)
 
 ## Future Plans
 
+- In-app notifications for private alerts: management rule triggers, screener hits, digests, review and position reminders, user alert rules and news on held tickers or private watchlists
 - Fundamentals indicators (P/E) and the health score, once a fundamentals source is confirmed
 - Research notes
 - Earnings analysis

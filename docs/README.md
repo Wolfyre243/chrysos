@@ -28,7 +28,7 @@ Short how-to tutorials for housekeeping tasks. None yet.
 Lookup material.
 
 - [Glossary](references/GLOSSARY.md): domain terms
-- [Data model](references/data-model.md): entities and attributes (ERD source of truth)
+- [Data model](references/data-model.md): table conventions, index of entities and cross-page relationships (each concept page holds its own entities)
 
 ## Other
 

@@ -40,8 +40,56 @@ Gathers what the market expects from a company's upcoming earnings, so trades ar
 
 Everything about one ticker in one view. The price chart overlays news, the user's own entries and exits, and GEX levels. Below it sit the analytics panels, research notes, recent news, and open positions with their rule status.
 
+## Data model
+
+Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
+
+### Indicator
+*(code)*
+- `id`
+- `name`
+- `version`
+- `scope` (stock, option, spread)
+- `requires` (chain, price_history, fundamentals)
+- `params_schema`
+- `output_type` (scalar, per_strike_series, term_curve)
+
+### IndicatorResult
+Cached computed values. Shared across users.
+- `id`
+- `symbol` → Ticker
+- `indicator_id`
+- `indicator_version`
+- `params` (JSONB)
+- `params_hash`
+- `as_of`
+- `snapshot_id` → ChainSnapshot (nullable)
+- `fundamentals_snapshot_id` → FundamentalsSnapshot (nullable, fundamentals indicators only)
+- `value` (JSONB)
+
+P/E and the health score are indicators with `scope` stock and `requires` fundamentals, so they have no tables of their own. The health score's `value` holds `score` (0 to 100), `grade` (A to F, derived from `score`) and `components` (sub-score per factor, such as valuation, margins, revenue).
+
+### TickerResearch
+A user's research file on one ticker. Private to that user; unique on (`user_id`, `symbol`).
+- `id`
+- `user_id` → User
+- `symbol` → Ticker
+- `business_summary` (how the company makes money, its segments and competitors)
+- `last_reviewed_at`
+
+### ResearchNote
+One entry in a research file.
+- `id`
+- `research_id` → TickerResearch
+- `kind` (observation, outside_factor)
+- `title`
+- `body`
+- `impact` (positive, negative, mixed; outside factors only, nullable)
+- `is_active` (false once the factor no longer applies)
+- `observed_at`
+
 ## Related
 
 - [Market data](market-data.md), the inputs to every indicator
 - [Rule engine](rule-engine.md) for using indicators as rule conditions
-- Data model: [Analytics](../references/data-model.md#analytics), [Research](../references/data-model.md#research), [EarningsEvent and EarningsExpectation](../references/data-model.md#market-data)
+- [EarningsEvent](market-data.md#earningsevent), [EarningsExpectation](market-data.md#earningsexpectation) and [FundamentalsSnapshot](market-data.md#fundamentalssnapshot), the stored inputs to earnings analysis and fundamentals indicators
