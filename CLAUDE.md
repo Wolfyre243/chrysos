@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Chrysos is mostly design docs plus a freshly scaffolded backend. `server/` holds a FastAPI app with only a healthcheck route; there is no frontend, database, test suite or Docker setup yet. The design is the source of truth for what gets built:
 
 - `docs/README.md`: index of all docs
-- `docs/concepts/`: what Chrysos does and how each part works (playbooks, rule engine, screener, journal, news, alerts, review, …), each ending with a "Data model" section listing the entities it owns; start with `overview.md`
+- `docs/concepts/`: what Chrysos does and how each part works (playbooks, rule engine, screener, journal, news, alerts, review, …), each ending with a "Data model" section listing the entities it owns; start with the "Overview" section of the root `README.md`
 - `docs/guides/`: short how-to tutorials for housekeeping tasks
 - `docs/references/`: lookup material, including `data-model.md` (table conventions, index of entities and their relationships) and `GLOSSARY.md`
 - `docs/architecture.md`: stack, deployment and external dependencies (adapters, providers, news feeds)

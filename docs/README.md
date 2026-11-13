@@ -1,12 +1,11 @@
 # Chrysos docs
 
-Design documentation for Chrysos. Start with the [overview](concepts/overview.md).
+Design documentation for Chrysos. Start with the [overview](../README.md#overview) in the root README.
 
 ## Concepts
 
 How Chrysos works and why.
 
-- [Overview](concepts/overview.md): what Chrysos is, its principles, and how the parts fit
 - [Users and access](concepts/users-and-access.md): CLI-created users, sessions, what is private, public or shared
 - [Playbooks](concepts/playbooks.md): structures, edges, add-ons, presets, parameters, versioning and public playbooks
 - [Rule engine](concepts/rule-engine.md): the shared rule format and its `$legs` / `$params` references

@@ -22,12 +22,12 @@ It is meant to replace paid tools such as Unusual Whales at close to zero cost. 
 
 ### How the parts fit
 
-- [Playbooks](playbooks.md) define each strategy as rules, evaluated by the [rule engine](rule-engine.md).
-- [Market data](market-data.md) and [analytics](analytics.md) supply the numbers those rules read.
-- The [screener](screener.md) finds candidates that match a playbook.
-- The [journal and trade log](journal-and-trade-log.md) record the plan and what actually happened in each trade.
-- [News and digests](news-and-digests.md) and [alerts](alerts.md) watch for things that need the user's attention.
-- The [weekly review](weekly-review.md) grades each trade's process and feeds changes back into the playbooks.
-- [Users and access](users-and-access.md) and [scheduling and time](scheduling-and-time.md) cover the cross-cutting rules.
+- [Playbooks](docs/concepts/playbooks.md) define each strategy as rules, evaluated by the [rule engine](docs/concepts/rule-engine.md).
+- [Market data](docs/concepts/market-data.md) and [analytics](docs/concepts/analytics.md) supply the numbers those rules read.
+- The [screener](docs/concepts/screener.md) finds candidates that match a playbook.
+- The [journal and trade log](docs/concepts/journal-and-trade-log.md) record the plan and what actually happened in each trade.
+- [News and digests](docs/concepts/news-and-digests.md) and [alerts](docs/concepts/alerts.md) watch for things that need the user's attention.
+- The [weekly review](docs/concepts/weekly-review.md) grades each trade's process and turns findings into suggestions for the user to apply to their playbooks.
+- [Users and access](docs/concepts/users-and-access.md) and [scheduling and time](docs/concepts/scheduling-and-time.md) cover the cross-cutting rules.
 
 See [architecture.md](./docs/architecture.md) for the stack, deployment and external dependencies, and [data-model.md](./docs/references/data-model.md) for the index of entities (each concept page holds its own).
