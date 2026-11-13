@@ -9,8 +9,8 @@ One alert system for everything that needs the user's attention.
 
 ## Delivery
 
-- Discord webhook first; each user has their own.
-- In-app notifications come later as a second `Notifier` channel.
+- Discord webhook first into a shared server, for public notifications.
+- In-app notifications come later as a second `Notifier` channel. This is mainly for personal notifications on private watchlists, etc.
 - Every delivery is logged with status and errors.
 
 ## Related
