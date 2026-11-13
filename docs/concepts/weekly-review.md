@@ -4,7 +4,7 @@ Learning from the user's own trades.
 
 ## Weekly review
 
-Scheduled, mostly generated, and about 15 minutes long.
+Scheduled, mostly generated, and about 15 minutes long. The review is private, so its reminder is an in-app notification once those exist; until then the review shows as due in the app.
 
 - Shows results and rule adherence by playbook, structure and edge.
 - The user grades each closed trade's process from A to F. Grades are crossed with outcome: a good process with a loss counts as variance, and a bad process with a win is flagged hardest.
@@ -27,7 +27,36 @@ Once enough data exists, two kinds of model can build on it:
 
 Findings reach the user as playbook change proposals in the weekly review, where they are applied or rejected like any other proposal.
 
+## Data model
+
+Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
+
+### WeeklyReview
+- `id`
+- `user_id` → User
+- `week_start`
+- `week_end`
+- `status` (draft, submitted)
+- `submitted_at`
+- `stats` (JSONB, auto-generated numbers by playbook, structure and edge)
+- `adherence_score`
+- `went_well`
+- `biggest_mistake`
+- `do_differently`
+- `commitment` (focus for next week)
+- `previous_commitment_kept` (bool)
+- `llm_summary` (nullable)
+
+### TradeGrade
+- `id`
+- `review_id` → WeeklyReview
+- `position_id` → Position
+- `process_grade` (A–F)
+- `outcome` (win, loss, scratch)
+- `quadrant` (repeat, variance, dangerous, lesson)
+- `comment`
+
 ## Related
 
 - [Journal and trade log](journal-and-trade-log.md), the data the review reads
-- Data model: [Weekly review](../references/data-model.md#weekly-review), [PlaybookChangeProposal](../references/data-model.md#playbooks-and-rules)
+- [PlaybookChangeProposal](playbooks.md#playbookchangeproposal), the proposals a review resolves

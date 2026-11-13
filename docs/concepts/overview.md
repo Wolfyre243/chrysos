@@ -22,4 +22,4 @@ It is meant to replace paid tools such as Unusual Whales at close to zero cost. 
 - The [weekly review](weekly-review.md) grades each trade's process and feeds changes back into the playbooks.
 - [Users and access](users-and-access.md) and [scheduling and time](scheduling-and-time.md) cover the cross-cutting rules.
 
-See [architecture.md](../architecture.md) for the stack, deployment and external dependencies, and [data-model.md](../references/data-model.md) for the data model.
+See [architecture.md](../architecture.md) for the stack, deployment and external dependencies, and [data-model.md](../references/data-model.md) for the index of entities (each concept page holds its own).

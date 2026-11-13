@@ -7,14 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Chrysos is mostly design docs plus a freshly scaffolded backend. `server/` holds a FastAPI app with only a healthcheck route; there is no frontend, database, test suite or Docker setup yet. The design is the source of truth for what gets built:
 
 - `docs/README.md`: index of all docs
-- `docs/concepts/`: what Chrysos does and how each part works (playbooks, rule engine, screener, journal, news, alerts, review, …); start with `overview.md`
+- `docs/concepts/`: what Chrysos does and how each part works (playbooks, rule engine, screener, journal, news, alerts, review, …), each ending with a "Data model" section listing the entities it owns; start with `overview.md`
 - `docs/guides/`: short how-to tutorials for housekeeping tasks
-- `docs/references/`: lookup material, including `data-model.md` (ERD source of truth) and `GLOSSARY.md`
+- `docs/references/`: lookup material, including `data-model.md` (table conventions, index of entities and their relationships) and `GLOSSARY.md`
 - `docs/architecture.md`: stack, deployment and external dependencies (adapters, providers, news feeds)
 - `docs/roadmap.md`: phase scope (Phase 0 MVP, Phase 1, later)
 - `docs/diagrams/*.drawio`: design diagrams
 
-The docs cross-reference each other. When a change touches behaviour, the data model and the architecture, update all affected docs so they stay consistent (e.g. a new entity in `references/data-model.md` should match its concept page in `concepts/`, and any new adapter or provider should appear in `architecture.md`). Add new docs to `docs/README.md`. Check `roadmap.md` before building something, so Phase 1 or later work isn't pulled into the MVP.
+The docs cross-reference each other. When a change touches behaviour, the data model and the architecture, update all affected docs so they stay consistent (e.g. a new entity goes in the "Data model" section of the concept page that owns it and in the index and relationships diagram in `references/data-model.md`, and any new adapter or provider should appear in `architecture.md`). Add new docs to `docs/README.md`. Check `roadmap.md` before building something, so Phase 1 or later work isn't pulled into the MVP.
 
 Prototype calculators and indicators are built first in the sibling repo `chrysos-lab` (Python, uv, yfinance), as plain typed modules kept apart from data fetching and UI, before they move into Chrysos as analytics plugins.
 
@@ -42,7 +42,7 @@ A self-hosted personal command center for stocks and options trading, for a smal
 - Frontend: TypeScript (pnpm), React Router (framework mode), shadcn/ui, Redux Toolkit with RTK Query, TradingView `lightweight-charts`.
 - Backend: Python (uv), FastAPI, SQLModel, Alembic migrations, PostgreSQL.
 - Docker Compose services: `postgres`, `api`, `worker`, `web`, `opend`. During development OpenD runs natively on Windows.
-- Market data: moomoo OpenAPI via OpenD long term; Phase 0 uses yfinance as the `MarketDataProvider` while OpenD is evaluated. LLM is OpenAI; notifications are Discord webhooks.
+- Market data: moomoo OpenAPI via OpenD long term; Phase 0 uses yfinance as the `MarketDataProvider` while OpenD is evaluated. LLM is OpenAI; notifications go to one shared Discord server by webhook, for public alerts only. Private alerts wait for an in-app `Notifier` channel (later).
 
 ## Core design ideas (read before designing or implementing anything)
 
@@ -55,7 +55,7 @@ A self-hosted personal command center for stocks and options trading, for a smal
 - **Record data from day one**: end-of-day chain snapshots (partitioned by date) and entry snapshots are collected before they are needed, for IV rank, backtesting and self-analytics.
 - **Zero budget**: respect provider quotas with a token-bucket rate limiter (spread work out, never evade limits); the screener is two-stage (cheap filter on the whole universe, chain fetches only for survivors). LLM spend is capped near USD 5/month with a budget guard; the LLM never reads raw articles, only headline + lead, and summaries are cached and shared across users.
 - **Time**: store UTC; market-session logic runs in `America/New_York`; user schedules use each user's timezone.
-- **Data ownership**: journals, positions, playbooks, reviews, alerts, screeners and digests are private per user; watchlists are public or private; market data, chain snapshots, news and summaries are shared.
+- **Data ownership**: journals, positions, playbooks, reviews, research files, alert rules, private alerts, screeners and digests are private per user; watchlists are public or private; market data, chain snapshots, news, summaries and public alerts are shared. Never post anything private to the shared Discord server.
 
 ## Agent skills
 

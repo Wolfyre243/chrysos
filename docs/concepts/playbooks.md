@@ -87,8 +87,100 @@ Every change creates a new version, and each trade records the version it was en
 - Every playbook change creates a new immutable version recording the version of each block and the resolved rules, selectors and parameters.
 - When a block's version is bumped in code, improvements still reach fields the user hasn't overridden. Playbooks using it pick up new parameter defaults for parameters they haven't overridden in a new `block_update` version, which applies immediately like a threshold change. New or changed rules and selectors arrive as change proposals (source `block_update`) for the next weekly review.
 
+## Data model
+
+Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
+
+### Structure
+*(code)* What is traded: the legs and their mechanics.
+- `key` (calendar, vertical, diagonal, double_calendar, iron_condor, iron_fly, straddle, stock, …)
+- `version`
+- `name`
+- `legs` (named slots with side, right, quantity ratio)
+- `selector_slots` (what an edge must fill, such as `front_expiry`, `back_expiry`, `strike`, `right`)
+- `exposes` (fields rules can read, such as `legs.front.dte`, `net_debit`, `max_loss`)
+- `actions` (lifecycle actions, such as `roll(front)`)
+
+### Edge
+*(code)* Why the trade is taken.
+- `key` (forward_factor, earnings_iv_crush, …)
+- `version`
+- `name`
+- `structures` (compatible structure keys)
+- `params_schema` (name, type, default, allowed range, description)
+- `selectors` (leg selector binding per compatible structure)
+- default entry rules, management rules, sizing rules, checklist
+
+### Addon
+*(code)* Cross-cutting rule pack. Adds rules only; never sets selectors.
+- `key` (liquidity_baseline, risk_2pct, checklist_core, …)
+- `version`
+- `name`
+- `structures` (optional; applies to all when empty)
+- `params_schema`
+- default rules and checklist items
+
+### PlaybookPreset
+*(code)* A named starting combination, such as "FF calendar".
+- `key`
+- `name`
+- `structure_key`
+- `edge_key`
+- `addon_keys`
+- `param_defaults` (optional, on top of the blocks' defaults)
+
+### Playbook
+A user's combination of one structure, one edge and any add-ons. `structure_key`, `edge_key` and `addon_keys` mirror the current version; changing any of them is a structural change and creates a new version.
+- `id`
+- `user_id` → User
+- `name`
+- `preset_key` (nullable; null when built from scratch)
+- `structure_key`
+- `edge_key` (must list `structure_key` as compatible)
+- `addon_keys`
+- `current_version_id` → PlaybookVersion
+- `is_active`
+
+### PlaybookVersion
+Immutable snapshot of the effective playbook at a point in time.
+- `id`
+- `playbook_id` → Playbook
+- `version_number`
+- `structure_key`, `structure_version`
+- `edge_key`, `edge_version`
+- `addons` (JSONB: add-on key → version)
+- `params` (JSONB, resolved values: block defaults plus user overrides)
+- `overrides` (JSONB, user changes keyed by block and rule id: parameter values, disabled rules, edited rules, extra user rules and checklist items)
+- `selectors` (JSONB, resolved leg selectors for the structure)
+- `entry_rules` (JSONB, resolved)
+- `checklist` (JSONB, resolved)
+- `management_rules` (JSONB, resolved)
+- `sizing_rules` (JSONB, resolved)
+- `change_type` (initial, threshold, structural, block_update)
+- `created_from_review_id` → WeeklyReview (nullable)
+
+### ChecklistItem
+*(value object, stored as JSONB)*
+- `id`
+- `prompt`
+- `answer_type` (text, bool, number)
+- `required`
+- `source` (`edge:<key>`, `addon:<key>` or `user`)
+
+### PlaybookChangeProposal
+Structural changes queued for the weekly review.
+- `id`
+- `playbook_id` → Playbook
+- `user_id` → User
+- `proposed_change` (JSONB)
+- `reason`
+- `source` (user, self_analytics, model, block_update)
+- `status` (pending, applied, rejected)
+- `resolved_in_review_id` → WeeklyReview (nullable)
+- `resolved_at`
+
 ## Related
 
 - [Rule engine](rule-engine.md) for the rule format, `$legs` and `$params` references
 - [Screener](screener.md), [journal and trade log](journal-and-trade-log.md) and [weekly review](weekly-review.md), which all read playbooks
-- Data model: [Playbooks and rules](../references/data-model.md#playbooks-and-rules)
+- [Rule](rule-engine.md#rule), the value object stored in `PlaybookVersion`

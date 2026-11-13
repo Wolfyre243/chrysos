@@ -28,9 +28,23 @@ Inside a playbook, rules can also use two kinds of reference, resolved before ev
 
 User alert rules use the same format with literal values, since they have no playbook to resolve references against.
 
+## Data model
+
+Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
+
+### Rule
+*(value object, stored as JSONB)* Shared format used in PlaybookVersion and AlertRule.
+- `id` (stable within its parent)
+- `kind` (entry, management, sizing, alert)
+- `condition` (indicator or field reference, params, op, value; or `all` / `any` group). Inside playbooks, params and values may reference `$legs.<slot>` and `$params.<name>`
+- `source` (block that contributed it, such as `edge:forward_factor` or `addon:risk_2pct`, or `user`; playbook rules only)
+- `stage` (derived for entry rules: `stage1` if it needs only snapshot-level data, `stage2` if it needs a chain)
+- `description`
+- `severity` (info, warning, critical)
+
 ## Related
 
 - [Playbooks](playbooks.md), the main source of rules
 - [Analytics](analytics.md) for the indicators rules can reference
 - [Screener](screener.md) for how entry rules are split into stages
-- Data model: [Rule and ChecklistItem](../references/data-model.md#playbooks-and-rules), [AlertRule](../references/data-model.md#alerts-and-notifications)
+- Data model: [ChecklistItem](playbooks.md#checklistitem) and [AlertRule](alerts.md#alertrule), stored alongside rules

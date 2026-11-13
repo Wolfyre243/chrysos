@@ -1,6 +1,6 @@
 # Chrysos architecture
 
-Stack, deployment and external dependencies. For how the system behaves, see the [concepts](README.md#concepts); for the data model, see [data-model.md](references/data-model.md).
+Stack, deployment and external dependencies. For how the system behaves, see the [concepts](README.md#concepts); for the data model, see the index in [data-model.md](references/data-model.md).
 
 ## Stack
 
@@ -39,7 +39,7 @@ This list is non-exhaustive. Every external dependency sits behind an interface 
 | `BrokerProvider`     | Positions and fills (read-only)                                                                       | None yet; interface only                             |
 | `NewsSource`         | Fetch and parse news items                                                                            | Generic RSS                                          |
 | `LLMProvider`        | Summaries and digests                                                                                 | OpenAI                                               |
-| `Notifier`           | Deliver alerts and digests                                                                            | Discord webhook                                      |
+| `Notifier`           | Deliver alerts and digests                                                                            | Discord webhook (shared server, public alerts only)  |
 
 Broker credentials, if ever added, are read-only. Chrysos records trades and never places orders.
 
@@ -62,7 +62,8 @@ To verify:
 
 ### Notifications
 
-- Discord webhooks, behind `Notifier`, one per user.
+- Discord, behind `Notifier`: one webhook into a shared server, for public alerts only (see [alerts](concepts/alerts.md#delivery)). The webhook URL works as a credential, since anyone holding it can post, so it is set as an environment variable rather than stored in the database.
+- In-app notifications, a second `Notifier` for private alerts, come later (see [roadmap.md](roadmap.md#future-plans)).
 
 ### News feeds
 
