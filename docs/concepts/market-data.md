@@ -6,6 +6,7 @@ Chrysos collects market data and keeps the history that is hard to get later.
 
 - Data comes through `MarketDataProvider`: quotes, option chains with IV and greeks, price history, earnings dates, fundamentals and consensus earnings estimates. See [architecture.md](../architecture.md#external-dependencies) for the providers.
 - Results are cached in Postgres. There is no universal ticker master table; tickers are cached on demand.
+- Option chain fetches are cached by symbol, expiry and fetch date, so screeners and other jobs that need the same chain in one window share a single fetch.
 - A token-bucket rate limiter enforces provider quotas. Long jobs spread their calls over time instead of trying to evade limits.
 - Provider calls are logged so quota usage is visible.
 

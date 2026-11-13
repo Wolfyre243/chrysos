@@ -2,9 +2,14 @@
 
 - For private, self-hosted use. There is no signup UI; users are created with a CLI script.
 - Simple session-based login and logout.
-- Private per user: journals, positions, trade records, playbooks, reviews, research files, alert rules, private alerts and their notifications, screeners, digests.
-- Watchlists: public (visible to all Chrysos users) or private (owner only).
+- Private per user: journals, positions, trade records, reviews and their suggestions, research files, alert rules, private alerts and their notifications, digests.
+- Public or private (owner only), chosen by the owner:
+  - Watchlists: public ones are visible to all Chrysos users.
+  - Playbooks: any user can journal trades against a public playbook, but only its owner edits it (see [public playbooks](playbooks.md#public-playbooks)).
+  - Screeners: a screener's visibility follows its playbook. A public playbook can have one public screener, whose hits are shared (see [screener](screener.md#public-and-private-screeners)).
 - Shared globally: market data cache, chain snapshots, news sources, articles and their summaries, and public alerts (posted to the shared Discord server; see [alerts](alerts.md#public-and-private-alerts)).
+
+Sharing a playbook never shares the trades made with it: positions, journals, stats and self-analytics on a public playbook stay private to each user.
 
 User settings cover timezone, the soft enforcement toggle, and the weekly review day and time. There is no per-user Discord setting: Discord is one shared server for public alerts only.
 

@@ -8,16 +8,16 @@ The rough outline and plan for Chrysos, split into phases.
 - Data layer (rate limiter, cache, end-of-day chain snapshots)
   - At this point in time, we will use yfinance as the primary `MarketDataProvider` while we continue experimenting with MooMoo's OpenD and enable it in Phase 1.
 - Analytics registry with the starter set (forward factor, term structure, expected move, GEX, etc.)
-- Rule engine and playbooks (structures, edges, add-ons, presets, parameters, user overrides, versioning, change proposals)
+- Rule engine and playbooks (structures, edges, add-ons, presets, parameters, user overrides, versioning with version history, public playbooks)
 - Journal and trade log (plans, notes, feelings, positions, executions, entry snapshots, soft enforcement, violations)
 - Ticker page (chart with trade markers and GEX levels, analytics panels)
-- Weekly review
+- Weekly review (with suggestions from self-analytics)
 
 The data layer here should be done quick to prototype the entire system, but kept easily swappable behind the `MarketDataProvider` interface for flexibility.
 
 ## Phase 1
 
-- Screeners (two-stage, nightly, calendar and vertical, hits listed in the app)
+- Screeners (two-stage, nightly, calendar and vertical, hits listed in the app, shared chain fetch cache across screeners, one public screener per public playbook posting hits to Discord)
 - News (configurable sources, ticker tagging, session digests read in the app, Discord alerts for high-importance public news, news markers on the ticker page)
 - Preserve historical data
   - Once the integration of MooMoo's OpenD is ready, start storing data for future needs
@@ -28,6 +28,8 @@ The data layer here should be done quick to prototype the entire system, but kep
 ## Future Plans
 
 - In-app notifications for private alerts: management rule triggers, screener hits, digests, review and position reminders, user alert rules and news on held tickers or private watchlists
+- Per-user notification settings (which alerts each user receives and where). Not designed yet; Discord stays the group feed for public alerts.
+- Playbook extras, if the simple model falls short: one-click apply for suggestions, following a public playbook with personal overrides, and an optional cooling-off period before structural edits apply
 - Fundamentals indicators (P/E) and the health score, once a fundamentals source is confirmed
 - Research notes
 - Earnings analysis

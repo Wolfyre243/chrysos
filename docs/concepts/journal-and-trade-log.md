@@ -4,7 +4,7 @@
 
 Every trade gets a written plan before entry, and the trader's thinking is recorded as the trade plays out.
 
-- Plan: choose a playbook, state why you're entering, answer the checklist, and set max loss, target and planned exit.
+- Plan: choose a playbook (one of your own or any [public playbook](playbooks.md#public-playbooks)), state why you're entering, answer the checklist, and set max loss, target and planned exit.
 - Notes: free-form notes on a trade at any point, from planning to close.
 - Feelings: the journal records how the trader felt about the trade, so emotional state can be compared with results later.
 
@@ -15,6 +15,7 @@ The record of what actually happened in each trade. Reviews, alerts and models r
 - Positions: one position is one trade idea from plan to close. It holds executions (open, adjust, roll, close), and P&L is tracked across all of them, so a rolled calendar stays one position. Covers stocks and options, single legs and spreads.
 - Fast entry: picking a playbook pre-fills the legs using its edge's leg selectors, and entering a strike fetches the current mark for the user to correct to the real fill. Fills are entered by hand for now, so entry has to be quick or it won't be done consistently.
 - Entry snapshot: when a trade opens, Chrysos saves every relevant indicator value. Self-analytics depends on these.
+- Playbook version: each position records the playbook version it was entered under and is managed under it until it closes, even if the playbook is edited meanwhile.
 
 ## Soft enforcement
 
@@ -54,8 +55,8 @@ How the trader felt at a point in the trade. Kept apart from journal notes so se
 One trade idea from plan to close. Created with the plan, in status `planned`.
 - `id`
 - `user_id` → User
-- `playbook_id` → Playbook
-- `playbook_version_id` → PlaybookVersion
+- `playbook_id` → Playbook (the user's own, or another user's public playbook)
+- `playbook_version_id` → PlaybookVersion (entered under; management rules are checked against this version)
 - `symbol` → Ticker
 - `structure_key` (copied from the playbook version, for grouping)
 - `edge_key` (copied from the playbook version, for grouping)

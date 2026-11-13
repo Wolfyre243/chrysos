@@ -16,7 +16,9 @@ A rule references either an analytics registry indicator or a known field (posit
 Inside a playbook, rules can also use two kinds of reference, resolved before evaluation:
 
 - `$legs.<slot>`: a leg slot of the playbook's structure (such as `$legs.front`), bound to the expiry and strike the edge's selectors picked for this ticker or position. This lets one edge work on a calendar, a diagonal or a double calendar without hardcoding DTEs.
-- `$params.<name>`: a named playbook parameter. Changing its value is a threshold change; changing the rule itself is a structural change.
+- `$params.<name>`: a named playbook parameter, so a threshold can change without rewriting the rule.
+
+Management alerts resolve these against the [playbook version](playbooks.md#parameters-and-changes) a position was entered under, not the playbook's current version. Entry checks and the screener use the current version.
 
 ```
 { "indicator": "forward_factor", "params": { "front": "$legs.front", "back": "$legs.back" }, "op": ">", "value": "$params.ff_min" }

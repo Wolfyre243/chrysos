@@ -10,8 +10,8 @@ One alert system for everything that needs the user's attention.
 
 Every alert is either public or private, following the [data ownership](users-and-access.md) rules:
 
-- Public: about shared data only. High-importance news on tickers in public watchlists and from macro sources.
-- Private: about anything a user owns. Management rule triggers (positions), screener hits (screeners), session digests, review and position reminders, user-defined alert rules, and news on held tickers or private watchlists.
+- Public: about shared data only. High-importance news on tickers in public watchlists and from macro sources, and hits from public screeners (see [screener](screener.md#public-and-private-screeners)).
+- Private: about anything a user owns. Management rule triggers (positions), hits from private screeners, session digests, review and position reminders, user-defined alert rules, and news on held tickers or private watchlists.
 
 ## Delivery
 

@@ -72,20 +72,37 @@ Small rule packs that apply across edges (`liquidity_baseline`, `risk_2pct`, `ch
 
 ## Parameters and changes
 
-Thresholds are named parameters, not numbers written into rules: a rule says FF > `ff_min`, and the playbook sets `ff_min` to 0.2. This splits changes cleanly:
+Thresholds are named parameters, not numbers written into rules: a rule says FF > `ff_min`, and the playbook sets `ff_min` to 0.2. Parameters are also what backtesting sweeps when looking for the best configuration of a playbook.
 
-- Threshold changes: changing a parameter value. They apply immediately.
-- Structural changes: changing the structure, edge or add-ons, or adding, removing or rewriting a rule. They are stored as a proposal until the weekly review applies or rejects it, so rules don't get rewritten in the middle of a trade.
+Every edit applies as soon as it is saved, whether it changes a parameter value or the structure, edge, add-ons, rules or checklist:
 
-Every change creates a new version, and each trade records the version it was entered under. Parameters are also what backtesting sweeps when looking for the best configuration of a playbook.
+- One save is one version. The editor keeps unsaved edits as a draft, and saving writes a single new version covering everything that changed, however many parameters and rules that is. A save that changes nothing creates no version.
+- Each version stores a diff against the one before it, so history shows what changed without comparing snapshots by hand.
+- If the latest version isn't referenced yet (no position, screener run or rule violation points at it), saving amends it in place instead of adding another version, so a burst of tweaks doesn't pile up versions. Once anything references a version, it is frozen.
+- Each trade records the version it was entered under, and an open position is always managed under that version. Its management rules, alerts and digest suggestions keep using the rules it was entered with, so editing a playbook never rewrites the rules of a trade in progress. New entries use the current version.
+
+Every playbook has a read-only version history: number, date, source, note, the diff, and how many of the user's positions were entered under each version. There is no revert; to go back, the user sets the old values again and saves.
+
+Findings from self-analytics and models don't change playbooks. They appear as [suggestions](weekly-review.md#playbooksuggestion) in the weekly review, and the user makes any change by hand.
 
 ## Composition and storage
 
 - Presets are named combinations defined in code.
 - Overrides store only what the user changed: parameter values, disabled rules, extra user rules and checklist items, and edits to individual rules. They are keyed by the block and rule id they apply to.
 - Resolving a playbook merges structure, edge and add-ons in that order, applies the overrides, and tags every resulting rule and checklist item with its `source` (edge, add-on or user). Violations and adherence stats can then point at the block a broken rule came from.
-- Every playbook change creates a new immutable version recording the version of each block and the resolved rules, selectors and parameters.
-- When a block's version is bumped in code, improvements still reach fields the user hasn't overridden. Playbooks using it pick up new parameter defaults for parameters they haven't overridden in a new `block_update` version, which applies immediately like a threshold change. New or changed rules and selectors arrive as change proposals (source `block_update`) for the next weekly review.
+- Every saved change creates a version (see above) recording the version of each block and the resolved rules, selectors and parameters.
+- When a block's version is bumped in code, improvements still reach fields the user hasn't overridden: new parameter defaults, and new or changed rules, selectors and checklist items. The deploy is the decision, so these apply automatically. A deploy writes one `block_update` version per affected playbook, covering every block bumped in that deploy, and the weekly review lists it under what changed that week.
+- If a bump removes or renames a rule the user has an override on, the override is orphaned. It is kept and flagged on the playbook page and in the weekly review, never dropped silently.
+
+## Public playbooks
+
+A playbook is private by default. Its owner can make it public, like a [watchlist](market-data.md#watchlists), so a small group doesn't have to build the same strategy several times.
+
+- Any user can choose a public playbook when planning a trade. Their positions, journals, stats and self-analytics stay private to them.
+- Only the owner edits a public playbook. Edits and block updates apply to everyone using it, while each open position stays on the version it was entered under.
+- A user who wants different settings creates their own playbook, usually from the same [preset](#playbookpreset). There is no fork or follow link between playbooks.
+- Once another user has a position on a public playbook, it can't be made private or deleted, so their trades always point at something they can see. The owner archives it instead (`is_active = false`): no new entries and no screener, but existing references still resolve. A public playbook nobody else has used can be switched back to private or deleted freely.
+- A public playbook can have one public screener, whose hits go to the shared Discord server (see [screener](screener.md#public-and-private-screeners)).
 
 ## Data model
 
@@ -130,19 +147,20 @@ Table conventions and the index of all entities are in [data-model.md](../refere
 - `param_defaults` (optional, on top of the blocks' defaults)
 
 ### Playbook
-A user's combination of one structure, one edge and any add-ons. `structure_key`, `edge_key` and `addon_keys` mirror the current version; changing any of them is a structural change and creates a new version.
+A user's combination of one structure, one edge and any add-ons. `structure_key`, `edge_key` and `addon_keys` mirror the current version.
 - `id`
-- `user_id` → User
+- `user_id` → User (owner; the only user who can edit it)
 - `name`
+- `visibility` (public, private; can't return to private once another user has a position on it)
 - `preset_key` (nullable; null when built from scratch)
 - `structure_key`
 - `edge_key` (must list `structure_key` as compatible)
 - `addon_keys`
 - `current_version_id` → PlaybookVersion
-- `is_active`
+- `is_active` (false when archived: no new entries or screener runs)
 
 ### PlaybookVersion
-Immutable snapshot of the effective playbook at a point in time.
+Snapshot of the effective playbook at a point in time, written by one save. Frozen once a position, screener run or rule violation references it; until then a later save amends it in place.
 - `id`
 - `playbook_id` → Playbook
 - `version_number`
@@ -156,8 +174,9 @@ Immutable snapshot of the effective playbook at a point in time.
 - `checklist` (JSONB, resolved)
 - `management_rules` (JSONB, resolved)
 - `sizing_rules` (JSONB, resolved)
-- `change_type` (initial, threshold, structural, block_update)
-- `created_from_review_id` → WeeklyReview (nullable)
+- `source` (initial, user, block_update)
+- `changes` (JSONB, diff against the previous version: a list of `{kind, key, from, to}` where `kind` is param, block, rule or checklist)
+- `note` (optional, why the change was made)
 
 ### ChecklistItem
 *(value object, stored as JSONB)*
@@ -167,20 +186,11 @@ Immutable snapshot of the effective playbook at a point in time.
 - `required`
 - `source` (`edge:<key>`, `addon:<key>` or `user`)
 
-### PlaybookChangeProposal
-Structural changes queued for the weekly review.
-- `id`
-- `playbook_id` → Playbook
-- `user_id` → User
-- `proposed_change` (JSONB)
-- `reason`
-- `source` (user, self_analytics, model, block_update)
-- `status` (pending, applied, rejected)
-- `resolved_in_review_id` → WeeklyReview (nullable)
-- `resolved_at`
-
 ## Related
 
 - [Rule engine](rule-engine.md) for the rule format, `$legs` and `$params` references
 - [Screener](screener.md), [journal and trade log](journal-and-trade-log.md) and [weekly review](weekly-review.md), which all read playbooks
+- [Users and access](users-and-access.md) for what public playbooks share and what stays private
 - [Rule](rule-engine.md#rule), the value object stored in `PlaybookVersion`
+- [PlaybookSuggestion](weekly-review.md#playbooksuggestion), findings about a playbook shown in the weekly review
+- [ADR 0001](../adr/0001-public-playbooks-without-change-proposals.md) for why there are no change proposals or forks

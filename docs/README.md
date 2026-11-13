@@ -7,8 +7,8 @@ Design documentation for Chrysos. Start with the [overview](concepts/overview.md
 How Chrysos works and why.
 
 - [Overview](concepts/overview.md): what Chrysos is, its principles, and how the parts fit
-- [Users and access](concepts/users-and-access.md): CLI-created users, sessions, what is private and what is shared
-- [Playbooks](concepts/playbooks.md): structures, edges, add-ons, presets, parameters and versioning
+- [Users and access](concepts/users-and-access.md): CLI-created users, sessions, what is private, public or shared
+- [Playbooks](concepts/playbooks.md): structures, edges, add-ons, presets, parameters, versioning and public playbooks
 - [Rule engine](concepts/rule-engine.md): the shared rule format and its `$legs` / `$params` references
 - [Market data](concepts/market-data.md): caching, rate limiting, chain snapshots and watchlists
 - [Analytics](concepts/analytics.md): indicator registry, fundamentals, health score, research notes, earnings analysis, ticker page
@@ -29,6 +29,12 @@ Lookup material.
 
 - [Glossary](references/GLOSSARY.md): domain terms
 - [Data model](references/data-model.md): table conventions, index of entities and cross-page relationships (each concept page holds its own entities)
+
+## Decisions
+
+Architecture decision records: why the design is the way it is.
+
+- [0001: Public playbooks, without change proposals or forks](adr/0001-public-playbooks-without-change-proposals.md)
 
 ## Other
 
