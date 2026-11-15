@@ -10,9 +10,9 @@ How Chrysos works and why.
 - [Playbooks](concepts/playbooks.md): structures, edges, add-ons, presets, parameters, versioning and public playbooks
 - [Rule engine](concepts/rule-engine.md): the shared rule format and its `$legs` / `$params` references
 - [Market data](concepts/market-data.md): caching, rate limiting, chain snapshots and watchlists
-- [Analytics](concepts/analytics.md): indicator registry, fundamentals, health score, research notes, earnings analysis, ticker page
+- [Analytics](concepts/analytics.md): indicator registry, fundamentals, health score, research files, earnings analysis, ticker page
 - [Screener](concepts/screener.md): the two-stage nightly pipeline
-- [Journal and trade log](concepts/journal-and-trade-log.md): plans, notes, feelings, positions, entry snapshots, soft enforcement
+- [Journal and trade log](concepts/journal-and-trade-log.md): notes (theses and journal notes, with ticker mentions), plans, feelings, positions, entry snapshots, soft enforcement
 - [News and digests](concepts/news-and-digests.md): sources, ingestion, session digests and the LLM budget
 - [Alerts](concepts/alerts.md): alert types, cooldowns and delivery
 - [Weekly review](concepts/weekly-review.md): process grading, self-analytics and later models

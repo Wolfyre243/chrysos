@@ -253,7 +253,7 @@
                 <mxCell id="chr-tp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;roundedPerimeter=1;dashed=1;strokeColor=light-dark(#1E88E5,#FFFFFF);" value="Ticker Page" vertex="1">
                     <mxGeometry height="30" width="120" x="300" y="270" as="geometry"/>
                 </mxCell>
-                <mxCell id="chr-rn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;roundedPerimeter=1;dashed=1;strokeColor=light-dark(#1E88E5,#FFFFFF);" value="Research Notes" vertex="1">
+                <mxCell id="chr-rn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;roundedPerimeter=1;dashed=1;strokeColor=light-dark(#1E88E5,#FFFFFF);" value="Notes" vertex="1">
                     <mxGeometry height="30" width="120" x="300" y="310" as="geometry"/>
                 </mxCell>
                 <mxCell id="chr-ea" parent="1" style="rounded=1;whiteSpace=wrap;html=1;roundedPerimeter=1;dashed=1;strokeColor=light-dark(#1E88E5,#FFFFFF);" value="Earnings Analysis" vertex="1">

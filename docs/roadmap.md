@@ -9,7 +9,7 @@ The rough outline and plan for Chrysos, split into phases.
   - At this point in time, we will use yfinance as the primary `MarketDataProvider` while we continue experimenting with MooMoo's OpenD and enable it in Phase 1.
 - Analytics registry with the starter set (forward factor, term structure, expected move, GEX, etc.)
 - Rule engine and playbooks (structures, edges, add-ons, presets, parameters, user overrides, versioning with version history, public playbooks)
-- Journal and trade log (plans, notes, feelings, positions, executions, entry snapshots, soft enforcement, violations)
+- Journal and trade log (notes with ticker mentions and hashtags, plans, feelings, positions, executions, entry snapshots, soft enforcement, violations)
 - Ticker page (chart with trade markers and GEX levels, analytics panels)
 - Weekly review (with suggestions from self-analytics)
 
@@ -31,7 +31,8 @@ The data layer here should be done quick to prototype the entire system, but kep
 - Per-user notification settings (which alerts each user receives and where). Not designed yet; Discord stays the group feed for public alerts.
 - Playbook extras, if the simple model falls short: one-click apply for suggestions, following a public playbook with personal overrides, and an optional cooling-off period before structural edits apply
 - Fundamentals indicators (P/E) and the health score, once a fundamentals source is confirmed
-- Research notes
+- Research files (a business summary per ticker, shown with the notes that mention it)
+- Per-user setting to require a linked thesis before entering a trade
 - Earnings analysis
 - Models on the user's trades and on stored market history
 - SEC filing parser that reads specific filing sections into structured data

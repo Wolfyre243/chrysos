@@ -5,9 +5,11 @@ Index of the entities to model in the ERD. Each entity's attributes live on the 
 ## Conventions
 
 - Every table has `created_at` / `updated_at` unless noted.
-- All timestamps are UTC (see [scheduling and time](../concepts/scheduling-and-time.md)).
+- All timestamps are `timestamptz`, stored in UTC (see [scheduling and time](../concepts/scheduling-and-time.md)).
+- Tables are normalized to third normal form. Values that can be derived from other rows are computed in views rather than stored; any accepted break is documented on the entity's concept page.
 - `→ Entity` marks a foreign key. Use the index below to find an entity on another page.
 - *(code)* marks items defined in code, not stored as tables, but referenced by keys from tables.
+- *(view)* marks a SQL view: computed on read from other tables, never stored.
 - *(value object, stored as JSONB)* marks a shape stored inside another table's JSONB column, not as a table of its own.
 - When adding an entity, put it on the owning concept page, add it to the index, and add its foreign keys to the relationships diagram.
 
@@ -19,10 +21,10 @@ Index of the entities to model in the ERD. Each entity's attributes live on the 
 | Market data           | [market-data](../concepts/market-data.md#data-model)              | [Ticker](../concepts/market-data.md#ticker), [PriceBar](../concepts/market-data.md#pricebar), [EarningsEvent](../concepts/market-data.md#earningsevent), [EarningsExpectation](../concepts/market-data.md#earningsexpectation), [FundamentalsSnapshot](../concepts/market-data.md#fundamentalssnapshot), [ChainSnapshot](../concepts/market-data.md#chainsnapshot), [OptionQuote](../concepts/market-data.md#optionquote), [ProviderCallLog](../concepts/market-data.md#providercalllog) |
 | Watchlists            | [market-data](../concepts/market-data.md#data-model)              | [Watchlist](../concepts/market-data.md#watchlist), [WatchlistItem](../concepts/market-data.md#watchlistitem)                                                                                                                                                                                                                                                                                                                                                                    |
 | Analytics             | [analytics](../concepts/analytics.md#data-model)                  | [Indicator](../concepts/analytics.md#indicator) *(code)*, [IndicatorResult](../concepts/analytics.md#indicatorresult)                                                                                                                                                                                                                                                                                                                                                           |
-| Research              | [analytics](../concepts/analytics.md#data-model)                  | [TickerResearch](../concepts/analytics.md#tickerresearch), [ResearchNote](../concepts/analytics.md#researchnote)                                                                                                                                                                                                                                                                                                                                                                |
+| Research              | [analytics](../concepts/analytics.md#data-model)                  | [TickerResearch](../concepts/analytics.md#tickerresearch)                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Playbooks             | [playbooks](../concepts/playbooks.md#data-model)                  | [Structure](../concepts/playbooks.md#structure) *(code)*, [Edge](../concepts/playbooks.md#edge) *(code)*, [Addon](../concepts/playbooks.md#addon) *(code)*, [PlaybookPreset](../concepts/playbooks.md#playbookpreset) *(code)*, [Playbook](../concepts/playbooks.md#playbook), [PlaybookVersion](../concepts/playbooks.md#playbookversion), [ChecklistItem](../concepts/playbooks.md#checklistitem) *(value object)* |
 | Rules                 | [rule-engine](../concepts/rule-engine.md#data-model)              | [Rule](../concepts/rule-engine.md#rule) *(value object)*                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Journal and trade log | [journal-and-trade-log](../concepts/journal-and-trade-log.md#data-model) | [TradePlan](../concepts/journal-and-trade-log.md#tradeplan), [JournalNote](../concepts/journal-and-trade-log.md#journalnote), [TradeFeeling](../concepts/journal-and-trade-log.md#tradefeeling), [Position](../concepts/journal-and-trade-log.md#position), [Execution](../concepts/journal-and-trade-log.md#execution), [ExecutionLeg](../concepts/journal-and-trade-log.md#executionleg), [EntrySnapshot](../concepts/journal-and-trade-log.md#entrysnapshot), [RuleViolation](../concepts/journal-and-trade-log.md#ruleviolation) |
+| Journal and trade log | [journal-and-trade-log](../concepts/journal-and-trade-log.md#data-model) | [Note](../concepts/journal-and-trade-log.md#note), [PositionNote](../concepts/journal-and-trade-log.md#positionnote), [NoteTicker](../concepts/journal-and-trade-log.md#noteticker), [NoteTag](../concepts/journal-and-trade-log.md#notetag), [TradePlan](../concepts/journal-and-trade-log.md#tradeplan), [Position](../concepts/journal-and-trade-log.md#position), [Execution](../concepts/journal-and-trade-log.md#execution), [ExecutionLeg](../concepts/journal-and-trade-log.md#executionleg), [TradeFeeling](../concepts/journal-and-trade-log.md#tradefeeling), [EntrySnapshot](../concepts/journal-and-trade-log.md#entrysnapshot), [RuleViolation](../concepts/journal-and-trade-log.md#ruleviolation), [position_summary](../concepts/journal-and-trade-log.md#position_summary) *(view)* |
 | Weekly review         | [weekly-review](../concepts/weekly-review.md#data-model)          | [WeeklyReview](../concepts/weekly-review.md#weeklyreview), [TradeGrade](../concepts/weekly-review.md#tradegrade), [PlaybookSuggestion](../concepts/weekly-review.md#playbooksuggestion)                                                                                                                                                                                                                                                                                                                                            |
 | Screeners             | [screener](../concepts/screener.md#data-model)                    | [Screener](../concepts/screener.md#screener-1), [ScreenerRun](../concepts/screener.md#screenerrun), [ScreenerResult](../concepts/screener.md#screenerresult)                                                                                                                                                                                                                                                                                                                     |
 | News and digests      | [news-and-digests](../concepts/news-and-digests.md#data-model)    | [NewsSource](../concepts/news-and-digests.md#newssource), [NewsArticle](../concepts/news-and-digests.md#newsarticle), [ArticleTicker](../concepts/news-and-digests.md#articleticker), [Digest](../concepts/news-and-digests.md#digest), [DigestArticle](../concepts/news-and-digests.md#digestarticle), [LLMUsage](../concepts/news-and-digests.md#llmusage)                                                                                                                 |
@@ -42,24 +44,23 @@ erDiagram
   ChainSnapshot |o--o{ IndicatorResult : "computed from"
   FundamentalsSnapshot |o--o{ IndicatorResult : "computed from"
   Watchlist ||--o{ WatchlistItem : contains
-  TickerResearch ||--o{ ResearchNote : contains
 
   Playbook ||--o{ PlaybookVersion : "versioned as"
 
-  Playbook ||--o{ Position : "traded under"
+  Note ||--o{ NoteTicker : mentions
+  Note ||--o{ NoteTag : "tagged with"
+  Note ||--o{ PositionNote : "linked by"
+  Position ||--o{ PositionNote : "linked by"
+
   PlaybookVersion ||--o{ Position : "entered under"
   ScreenerResult |o--o{ Position : originates
-  Position ||--|| TradePlan : "planned by"
-  Position ||--o{ JournalNote : has
-  Position ||--o{ TradeFeeling : has
+  Position ||--o| TradePlan : "planned by"
   Position ||--o{ Execution : has
-  Execution |o--o{ TradeFeeling : "felt at"
   Execution ||--o{ ExecutionLeg : has
+  Execution ||--o{ TradeFeeling : "felt at"
   Execution ||--o{ EntrySnapshot : "captured at"
   ChainSnapshot |o--o{ EntrySnapshot : "captured from"
-  Position ||--o{ RuleViolation : has
-  Execution |o--o{ RuleViolation : "detected at"
-  PlaybookVersion ||--o{ RuleViolation : "checked against"
+  Execution ||--o{ RuleViolation : "detected at"
 
   WeeklyReview ||--o{ TradeGrade : grades
   Position ||--o{ TradeGrade : "graded in"

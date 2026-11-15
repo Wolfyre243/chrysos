@@ -2,7 +2,7 @@
 
 - For private, self-hosted use. There is no signup UI; users are created with a CLI script.
 - Simple session-based login and logout.
-- Private per user: journals, positions, trade records, reviews and their suggestions, research files, alert rules, private alerts and their notifications, digests.
+- Private per user: notes (theses and journal notes), journals, positions, trade records, reviews and their suggestions, research files, alert rules, private alerts and their notifications, digests.
 - Public or private (owner only), chosen by the owner:
   - Watchlists: public ones are visible to all Chrysos users.
   - Playbooks: any user can journal trades against a public playbook, but only its owner edits it (see [public playbooks](playbooks.md#public-playbooks)).

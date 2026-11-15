@@ -28,9 +28,9 @@ Forward factor, IV term structure, expected move, and gamma exposure (per-strike
 
 Both wait on confirming a fundamentals source (see the moomoo "To verify" list in [architecture.md](../architecture.md#moomoo-opend)).
 
-## Research notes
+## Research files
 
-A structured record of observations about a stock, how its business works, and outside factors that could help or hurt it.
+A user's file on one stock: a summary of how its business works, plus every [note](journal-and-trade-log.md#notes) that mentions the ticker. Observations and outside factors that could help or hurt the stock are ordinary notes, tagged with hashtags such as `#risk` or `#tailwind`.
 
 ## Earnings analysis
 
@@ -38,7 +38,7 @@ Gathers what the market expects from a company's upcoming earnings, so trades ar
 
 ## Ticker page
 
-Everything about one ticker in one view. The price chart overlays news, the user's own entries and exits, and GEX levels. Below it sit the analytics panels, research notes, recent news, and open positions with their rule status.
+Everything about one ticker in one view. The price chart overlays news, the user's own entries and exits, and GEX levels. Below it sit the analytics panels, the user's notes on the ticker (notes that mention it and notes linked to positions on it), recent news, and open positions with their rule status.
 
 ## Data model
 
@@ -70,23 +70,12 @@ Cached computed values. Shared across users.
 P/E and the health score are indicators with `scope` stock and `requires` fundamentals, so they have no tables of their own. The health score's `value` holds `score` (0 to 100), `grade` (A to F, derived from `score`) and `components` (sub-score per factor, such as valuation, margins, revenue).
 
 ### TickerResearch
-A user's research file on one ticker. Private to that user; unique on (`user_id`, `symbol`).
+A user's research file on one ticker. Private to that user; unique on (`user_id`, `symbol`). The file's entries are the user's notes that mention the ticker (see [NoteTicker](journal-and-trade-log.md#noteticker)); they aren't stored here.
 - `id`
 - `user_id` → User
 - `symbol` → Ticker
 - `business_summary` (how the company makes money, its segments and competitors)
 - `last_reviewed_at`
-
-### ResearchNote
-One entry in a research file.
-- `id`
-- `research_id` → TickerResearch
-- `kind` (observation, outside_factor)
-- `title`
-- `body`
-- `impact` (positive, negative, mixed; outside factors only, nullable)
-- `is_active` (false once the factor no longer applies)
-- `observed_at`
 
 ## Related
 
