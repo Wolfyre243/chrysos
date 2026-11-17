@@ -21,3 +21,11 @@
 **Feeling**: the trader's emotional state at a fill (opening, adjusting, rolling or closing), picked from a fixed list with an intensity, so it can be compared with results.
 
 **Suggestion**: a finding from self-analytics or a model about a playbook, shown in the weekly review. It never changes the playbook; the user acts on it by hand. See [weekly review](../concepts/weekly-review.md#suggestions). Avoid: *change proposal* (removed, see [ADR 0001](../adr/0001-public-playbooks-without-change-proposals.md)).
+
+**Comparison**: one value checked against another, such as forward factor above the playbook's minimum. The smallest part of a condition. See [rule engine](../concepts/rule-engine.md).
+
+**Condition**: a true/false expression built from comparisons joined with *and*, *or* and *not*, which can be nested.
+
+**Rule**: a named condition with one purpose, such as one of a playbook's entry, sizing or management rules, one of a screener's own rules, or an alert rule. Avoid: *criteria*, *filter*, *check*.
+
+**Disabled rule**: a rule the user has switched off. It stays in its playbook and version history but is skipped during evaluation. See [ADR 0002](../adr/0002-rules-without-severity.md).
