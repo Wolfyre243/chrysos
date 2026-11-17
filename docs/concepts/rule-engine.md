@@ -104,6 +104,14 @@ A screener on this playbook has no rules of its own beyond optional `stage1_filt
 3. Stage 2 runs only on the tickers that passed stage 1. The edge's selectors pick legs for each one (for AAPL, say, front 2026-12-18 and back 2027-01-15, both 230 calls). The engine fetches just those chains, binds `$legs.*` and evaluates the `stage2` rules. Here `forward_factor` is 0.27, which passes `> 0.2`.
 4. Each ticker that passes is saved as a `ScreenerResult` with its proposed `legs`, its indicator `metrics` and a rank.
 
+## Open questions
+
+This page is being redesigned (see [ADR 0002](../adr/0002-rules-without-severity.md) and [ADR 0003](../adr/0003-rules-dont-pin-indicator-versions.md) for what is settled so far). These points are deferred to their own design session:
+
+- Evaluation subjects: what a rule is evaluated against, and how the screener, soft enforcement, management alerts and alert rules each build one and read from it in code. Working draft: three nested subjects, `ticker` (one underlying), `trade` (a ticker plus legs, proposed by selectors or filled) and `position` (a trade's current open legs plus its executions and P&L). A subject identifies what a rule is about (the symbol, the legs, the position); field and indicator values are read from the data layer when a rule asks for them. The session should produce a worked example of each feature in code.
+- Whether "trade" is narrowed to mean a ticker plus legs. About 15 places in the docs use "trade" for what is really a position (closed trades, trades in progress, journaling trades against a playbook), and `TradeGrade` grades a position.
+- Where sizing rules such as "at most 2% of the account" get the account's value from. Nothing in the data model holds it yet.
+
 ## Data model
 
 Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).

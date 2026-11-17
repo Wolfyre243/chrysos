@@ -29,3 +29,5 @@
 **Rule**: a named condition with one purpose, such as one of a playbook's entry, sizing or management rules, one of a screener's own rules, or an alert rule. Avoid: *criteria*, *filter*, *check*.
 
 **Disabled rule**: a rule the user has switched off. It stays in its playbook and version history but is skipped during evaluation. See [ADR 0002](../adr/0002-rules-without-severity.md).
+
+**Unknown result**: what a comparison gives when a value couldn't be found, such as after a failed chain fetch. It is neither true nor false, and differs from a value that doesn't exist, such as an earnings date that hasn't been announced. See [rule engine](../concepts/rule-engine.md).
