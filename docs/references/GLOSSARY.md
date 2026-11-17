@@ -31,3 +31,9 @@
 **Disabled rule**: a rule the user has switched off. It stays in its playbook and version history but is skipped during evaluation. See [ADR 0002](../adr/0002-rules-without-severity.md).
 
 **Unknown result**: what a comparison gives when a value couldn't be found, such as after a failed chain fetch. It is neither true nor false, and differs from a value that doesn't exist, such as an earnings date that hasn't been announced. See [rule engine](../concepts/rule-engine.md).
+
+**Rule set**: the rules one owner keeps for one purpose, such as a playbook version's entry rules or a screener's extra rules.
+
+**Requirement**: a rule read together with the rest of its rule set, all of which must be true. The screener and soft enforcement read rules this way. The feature decides how a rule is read; the rule itself only states a fact.
+
+**Trigger**: a rule read on its own, whose true result makes Chrysos act, such as a management rule raising an alert. Management alerts and alert rules read rules this way.
