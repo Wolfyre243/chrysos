@@ -39,7 +39,7 @@ This list is non-exhaustive. Every external dependency sits behind an interface 
 | `BrokerProvider`     | Positions and fills (read-only)                                                                       | None yet; interface only                             |
 | `NewsSource`         | Fetch and parse news items                                                                            | Generic RSS                                          |
 | `LLMProvider`        | Summaries and digests                                                                                 | OpenAI                                               |
-| `Notifier`           | Deliver alerts and digests                                                                            | Discord webhook (shared server, public alerts only)  |
+| `Notifier`           | Deliver alert events and digests                                                                      | Discord webhook (shared server, public alert events only) |
 
 Broker credentials, if ever added, are read-only. Chrysos records trades and never places orders.
 
@@ -62,8 +62,8 @@ To verify:
 
 ### Notifications
 
-- Discord, behind `Notifier`: one webhook into a shared server, for public alerts only (see [alerts](concepts/alerts.md#delivery)). The webhook URL works as a credential, since anyone holding it can post, so it is set as an environment variable rather than stored in the database.
-- In-app notifications, a second `Notifier` for private alerts, come later (see [roadmap.md](roadmap.md#future-plans)).
+- Discord, behind `Notifier`: one webhook into a shared server, for public alert events only (see [alerts](concepts/alerts.md#delivery)). The webhook URL works as a credential, since anyone holding it can post, so it is set as an environment variable rather than stored in the database.
+- In-app notifications, a second `Notifier` for private alert events, come later (see [roadmap.md](roadmap.md#future-plans)).
 
 ### News feeds
 

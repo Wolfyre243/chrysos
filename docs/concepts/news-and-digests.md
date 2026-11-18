@@ -86,5 +86,5 @@ For the monthly budget guard.
 
 ## Related
 
-- [Alerts](alerts.md) for high-importance news alerts, digest delivery, and which alerts are public
+- [Alerts](alerts.md) for high-importance news alert events, digest delivery, and which alert events are public
 - [Scheduling and time](scheduling-and-time.md) for news polling and digest jobs

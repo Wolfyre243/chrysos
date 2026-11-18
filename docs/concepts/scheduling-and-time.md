@@ -3,7 +3,7 @@
 - All timestamps are stored in UTC.
 - All market-session logic runs in `America/New_York`, so US daylight saving changes are handled correctly.
 - User-facing schedules (weekly review) use each user's own timezone.
-- Scheduled jobs: end-of-day chain snapshots, nightly screener, news polling, session digests, management-rule checks, review reminders, earnings expectation captures, fundamentals refreshes.
+- Scheduled jobs: end-of-day chain snapshots, nightly screener, news polling, session digests, management trigger checks, review reminders, earnings expectation captures, fundamentals refreshes.
 
 ## Data model
 

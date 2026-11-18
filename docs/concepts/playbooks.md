@@ -2,9 +2,9 @@
 
 A playbook is one strategy written as rules. Each part is read by a different layer:
 
-- Entry criteria: conditions a trade must meet, such as FF > 0.2 or no earnings between expirations. The screener uses them as filters, and each new trade is checked against them.
+- Entry rules: conditions a trade must meet, such as FF > 0.2 or no earnings between expirations. The screener screens with them, and each new trade is checked against them.
 - Pre-trade checklist: questions to answer before entering, such as thesis, max loss and planned exit.
-- Management rules: when to take profit or close, such as +25% or 7 DTE before front expiry. The alerts engine checks open positions against them.
+- Management rules: when to take profit or close, such as +25% or 7 DTE before front expiry. Management triggers check open positions against them and raise alert events.
 - Sizing rules: limits such as the maximum share of the account per trade. Every entry is checked against them, and sizing over time is charted to show trading habits.
 - Leg selection: the trade's structure and how its expiries and strikes are picked, used to pre-fill entry and to tell the screener which part of the chain to fetch.
 
@@ -20,7 +20,7 @@ A playbook is not one fixed template. It is put together from blocks defined in 
 
 All three kinds of block are registered and versioned in code like analytics plugins. Users choose and combine blocks; they don't define new ones in the UI.
 
-A playbook is one structure, exactly one edge, any number of add-ons, plus the user's parameter overrides and extra rules. Only the edge picks the legs; add-ons only add rules, so blocks never compete over leg selection.
+A playbook is one structure, exactly one edge, any number of add-ons, plus the user's parameter overrides and own rules. Only the edge picks the legs; add-ons only add rules, so blocks never compete over leg selection.
 
 The same structure can carry different edges, and the same edge can sit on different structures:
 
@@ -43,7 +43,7 @@ What is traded. Each structure declares:
 | `version`        | Bumped whenever legs, maths or exposed fields change                                       |
 | `legs`           | Named leg slots with side, right and quantity ratio (calendar: `front` sells, `back` buys) |
 | `selector_slots` | The slots the edge must fill (calendar: `front_expiry`, `back_expiry`, `strike`, `right`)  |
-| `exposes`        | Fields rules can read (`legs.front.dte`, `net_debit`, `max_loss`, width, …)                |
+| `exposes`        | Fields rules can read (front leg DTE, `net_debit`, `max_loss`, width, …)                   |
 | `actions`        | Lifecycle actions the trade log understands (calendar: `roll(front)`)                      |
 
 Structures own the mechanics: building the legs, P&L and max-loss maths, adding up greeks, and what an adjustment or roll means for a position.
@@ -104,6 +104,21 @@ A playbook is private by default. Its owner can make it public, like a [watchlis
 - Once another user has a position on a public playbook, it can't be made private or deleted, so their trades always point at something they can see. The owner archives it instead (`is_active = false`): no new entries and no screener, but existing references still resolve. A public playbook nobody else has used can be switched back to private or deleted freely.
 - A public playbook can have one public screener, whose hits go to the shared Discord server (see [screener](screener.md#public-and-private-screeners)).
 
+## Open questions
+
+The [rule engine](rule-engine.md) was redesigned first (ADRs [0002](../adr/0002-rules-without-severity.md) to [0007](../adr/0007-rules-dont-do-arithmetic.md)); this page hasn't been revisited since, so parts of it still describe the old rule format. Settled so far: edges and add-ons are playbook blocks that own their default rules, and those rules are written as JSON. Still to design:
+
+- Params: how a block declares them (`params_schema`), how a playbook version holds their values, and how rules reference them. The rule engine design proposed that blocks declare params, playbook versions give them values, and rules point at them with param operands. Also open: whether users can declare their own params (today a user rule such as "forward factor below 3" can only use a literal), and what happens when an edge and an add-on declare the same param name.
+- Rule ownership in a playbook version: how a resolved version records which block each rule came from, so refs such as `edge:forward_factor/ff_above_min` can be formed. Options include a flat list of refs, rules grouped by owner, or a `RuleSet` table that playbook versions, screeners and alerts all reference, which would also settle how [trigger state](alerts.md#open-questions) is stored. The choice also fixes the format of override keys and `RuleViolation.rule_ref`.
+- Block files: where each block's JSON lives, and how it is loaded and checked at startup and in tests ([ADR 0004](../adr/0004-rules-are-json-only.md)).
+- Edited block rules: how a rule the user has edited receives later block updates, and how orphaned overrides are detected now that rules have keys.
+- Leg selectors: their format. They are still strings using the old `$params` syntax (`nearest(dte=$params.front_dte)`), while rules now use typed operands.
+- Leg slots across structures: slot names belong to each structure, so an edge gives selectors per structure. Can one edge rule work on several structures, such as a calendar and a double calendar, without a copy per structure?
+- Structure fields: how a structure's `exposes` relates to the shared [field catalog](rule-engine.md#fields), for structure-specific values such as a vertical's width.
+- Sizing: where the account's value comes from, for rules such as "max loss at most 2% of the account" (also open on the [rule engine](rule-engine.md#open-questions) page).
+- Naming the rules a user adds to their own playbook: "custom rule" now means a screener's own rules.
+- Management actions: whether a management rule can name the action it suggests, such as close or roll, using the structure's `actions`.
+
 ## Data model
 
 Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
@@ -115,7 +130,7 @@ Table conventions and the index of all entities are in [data-model.md](../refere
 - `name`
 - `legs` (named slots with side, right, quantity ratio)
 - `selector_slots` (what an edge must fill, such as `front_expiry`, `back_expiry`, `strike`, `right`)
-- `exposes` (fields rules can read, such as `legs.front.dte`, `net_debit`, `max_loss`)
+- `exposes` (fields rules can read, such as front leg DTE, `net_debit`, `max_loss`)
 - `actions` (lifecycle actions, such as `roll(front)`)
 
 ### Edge
@@ -188,7 +203,7 @@ Snapshot of the effective playbook at a point in time, written by one save. Froz
 
 ## Related
 
-- [Rule engine](rule-engine.md) for the rule format, `$legs` and `$params` references
+- [Rule engine](rule-engine.md) for the rule format, fields, params and leg slots
 - [Screener](screener.md), [journal and trade log](journal-and-trade-log.md) and [weekly review](weekly-review.md), which all read playbooks
 - [Users and access](users-and-access.md) for what public playbooks share and what stays private
 - [Rule](rule-engine.md#rule), the value object stored in `PlaybookVersion`

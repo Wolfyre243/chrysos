@@ -15,7 +15,7 @@ It is meant to replace paid tools such as Unusual Whales at close to zero cost. 
 ### Principles
 
 1. Playbooks drive everything. One strategy definition feeds the screener, the trade checklist, management alerts and the weekly review.
-2. One rule engine. Screener filters, entry checks, management rules and alerts share the same rule format and evaluator.
+2. One rule engine. Screeners, soft enforcement, management triggers and alerts share the same rule format and evaluator.
 3. Process over outcome. Reviews grade how closely a trade followed its plan, separately from whether it made money.
 4. Record data from day one. Option chain history and entry snapshots can't be bought cheaply later, so Chrysos collects them before it needs them.
 5. Zero budget first. Use free data and keep LLM spend near USD 5 a month. Pay for more only where a need is proven.

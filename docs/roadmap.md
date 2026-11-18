@@ -23,12 +23,12 @@ The data layer here should be done quick to prototype the entire system, but kep
   - Once the integration of MooMoo's OpenD is ready, start storing data for future needs
 - Backtesting
   - Run playbooks against historical data and sweep their named parameters (and swap edges or structures) to find the best configuration for each.
-- Alerts (public alerts to the shared Discord server; private alerts are recorded and shown in the app)
+- Alerts and management triggers (public alert events to the shared Discord server; private ones are recorded and shown in the app)
 
 ## Future Plans
 
-- In-app notifications for private alerts: management rule triggers, screener hits, digests, review and position reminders, user alert rules and news on held tickers or private watchlists
-- Per-user notification settings (which alerts each user receives and where). Not designed yet; Discord stays the group feed for public alerts.
+- In-app notifications for private alert events: management triggers, screener hits, digests, review and position reminders, users' own alerts and news on held tickers or private watchlists
+- Per-user notification settings (which alert events each user receives and where). Not designed yet; Discord stays the group feed for public alert events.
 - More ways for a trigger to fire: on every evaluation while true, at most once a day, or once only (see [ADR 0005](adr/0005-triggers-fire-on-becoming-true.md))
 - Playbook extras, if the simple model falls short: one-click apply for suggestions, following a public playbook with personal overrides, and an optional cooling-off period before structural edits apply
 - Fundamentals indicators (P/E) and the health score, once a fundamentals source is confirmed

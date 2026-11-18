@@ -39,10 +39,12 @@ The record of what actually happened in each trade. Reviews, alerts and models r
 Chrysos always records violations, at the fill where each is detected:
 
 - No plan and incomplete checklist: at the first open.
-- Failed entry criteria and sizing breach: at an open or adjustment.
+- Failed entry rules and sizing breach: at an open or adjustment.
 - Off-plan exit: at the close. An option that expires is entered as a close at zero.
 
-A per-user toggle only controls whether the UI warns about them, so review statistics stay complete either way. Checks while planning are live warnings in the UI and aren't stored, since a plan that is never traded has nothing to review. Trades opened without a plan are flagged as unplanned.
+A rule whose result is unknown, for example because a chain fetch failed, isn't a violation (see [unknown and null](rule-engine.md#unknown-and-null)).
+
+A per-user toggle only controls whether the UI warns about violations, so review statistics stay complete either way. Checks while planning are live warnings in the UI and aren't stored, since a plan that is never traded has nothing to review. Trades opened without a plan are flagged as unplanned.
 
 ## Data model
 
@@ -130,14 +132,14 @@ Indicator values captured at an execution.
 - `execution_id` → Execution
 - `captured_at`
 - `spot_price`
-- `values` (JSONB: indicator id → version, params, value)
+- `values` (JSONB: indicator id → version, args, value)
 - `chain_snapshot_id` → ChainSnapshot (nullable)
 
 ### RuleViolation
 Always recorded, regardless of the enforcement toggle. Checked against the playbook version of the execution's position; `created_at` is when it was detected.
 - `id`
 - `execution_id` → Execution
-- `rule_ref` (rule or checklist item id)
+- `rule_ref` (ref of the rule or checklist item, `<owner>/<key>`, such as `edge:forward_factor/ff_above_min`; see [rules and rule sets](rule-engine.md#rules-and-rule-sets))
 - `violation_type` (no_plan, incomplete_checklist, entry_rule_failed, off_plan_exit, sizing_breach)
 - `expected` (JSONB)
 - `actual` (JSONB)

@@ -4,18 +4,19 @@ Numbers and research that brokerage platforms don't provide.
 
 ## Indicator registry
 
-Every indicator or calculator is a plugin registered in code. Once registered, it appears on the ticker page, as a screener filter, in entry snapshots and as a rule condition, with no other changes. Each plugin declares:
+Every indicator or calculator is a plugin registered in code. Once registered, it appears on the ticker page, in entry snapshots and in [rules](rule-engine.md#indicators) (and so in screeners, soft enforcement and alerts), with no other changes. An indicator is any formula Chrysos owns; a value the provider supplies as is, or plain arithmetic with one possible definition, is a [field](rule-engine.md#fields) instead. Each plugin declares:
 
-| Field        | Meaning                                               |
-| ------------ | ----------------------------------------------------- |
-| `id`, `name` | Identifier and display name                           |
-| `version`    | Bumped whenever the formula changes                   |
-| `scope`      | `stock`, `option` or `spread`                         |
-| `requires`   | Data needed: `chain`, `price_history`, `fundamentals` |
-| `params`     | Parameter schema (e.g. front/back DTE targets)        |
-| `output`     | `scalar`, `per_strike_series` or `term_curve`         |
+| Field        | Meaning                                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------------------- |
+| `id`, `name` | Identifier and display name                                                                               |
+| `version`    | Bumped whenever the formula changes                                                                       |
+| `scope`      | `stock`, `option` or `spread` (may be dropped once rule subjects are settled; see [rule engine](rule-engine.md#open-questions)) |
+| `requires`   | Data needed, from the shared set: `quote`, `price_history`, `earnings`, `fundamentals`, `chain`           |
+| `args`       | Argument schema, such as the two legs forward factor compares                                             |
+| `output`     | `scalar`, `per_strike_series` or `term_curve`                                                             |
+| `scalars`    | For non-scalar outputs, the named scalar values rules can use, such as GEX's `call_wall`                  |
 
-The output type selects the visualisation on the ticker page, and scalar outputs can be used as screener filters. Snapshots store the indicator version, so historical values are only compared within the same formula version. New stock or option indicators can be added without changes elsewhere.
+The output type selects the visualisation on the ticker page. Scalar outputs, and the named scalars of other outputs, can be used in rules. "Params" is never used for indicator arguments; it only means [playbook parameters](rule-engine.md#thresholds-and-params). Snapshots store the indicator version, so historical values are only compared within the same formula version. New stock or option indicators can be added without changes elsewhere.
 
 ## Starter indicators
 
@@ -23,7 +24,7 @@ Forward factor, IV term structure, expected move, and gamma exposure (per-strike
 
 ## Fundamentals indicators and health score
 
-- P/E and other fundamentals metrics are registry indicators like the rest (`scope` stock, `requires` fundamentals), so they can be screener filters and rule conditions.
+- P/E and other fundamentals metrics are registry indicators like the rest (`scope` stock, `requires` fundamentals), so rules can use them. Rules read P/E only through this indicator; the provider's `pe_ratio` stored on [FundamentalsSnapshot](market-data.md#fundamentalssnapshot) is an input, not a field rules can read, since it goes stale as soon as the price moves.
 - The health score is an in-house grade of a stock's overall health and profitability, built from fundamentals such as P/E, margins and revenue. It is a registry indicator too, so a playbook can filter on it.
 
 Both wait on confirming a fundamentals source (see the moomoo "To verify" list in [architecture.md](../architecture.md#moomoo-opend)).
@@ -50,9 +51,10 @@ Table conventions and the index of all entities are in [data-model.md](../refere
 - `name`
 - `version`
 - `scope` (stock, option, spread)
-- `requires` (chain, price_history, fundamentals)
-- `params_schema`
+- `requires` (quote, price_history, earnings, fundamentals, chain)
+- `args_schema`
 - `output_type` (scalar, per_strike_series, term_curve)
+- `scalars` (named scalar outputs, for non-scalar output types)
 
 ### IndicatorResult
 Cached computed values. Shared across users.
@@ -60,8 +62,8 @@ Cached computed values. Shared across users.
 - `symbol` → Ticker
 - `indicator_id`
 - `indicator_version`
-- `params` (JSONB)
-- `params_hash`
+- `args` (JSONB)
+- `args_hash`
 - `as_of`
 - `snapshot_id` → ChainSnapshot (nullable)
 - `fundamentals_snapshot_id` → FundamentalsSnapshot (nullable, fundamentals indicators only)

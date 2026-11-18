@@ -2,16 +2,16 @@
 
 - For private, self-hosted use. There is no signup UI; users are created with a CLI script.
 - Simple session-based login and logout.
-- Private per user: notes (theses and journal notes), journals, positions, trade records, reviews and their suggestions, research files, alert rules, private alerts and their notifications, digests.
+- Private per user: notes (theses and journal notes), journals, positions, trade records, reviews and their suggestions, research files, alerts, private alert events and their notifications, digests.
 - Public or private (owner only), chosen by the owner:
   - Watchlists: public ones are visible to all Chrysos users.
   - Playbooks: any user can journal trades against a public playbook, but only its owner edits it (see [public playbooks](playbooks.md#public-playbooks)).
   - Screeners: a screener's visibility follows its playbook. A public playbook can have one public screener, whose hits are shared (see [screener](screener.md#public-and-private-screeners)).
-- Shared globally: market data cache, chain snapshots, news sources, articles and their summaries, and public alerts (posted to the shared Discord server; see [alerts](alerts.md#public-and-private-alerts)).
+- Shared globally: market data cache, chain snapshots, news sources, articles and their summaries, and public alert events (posted to the shared Discord server; see [alerts](alerts.md#public-and-private-alert-events)).
 
 Sharing a playbook never shares the trades made with it: positions, journals, stats and self-analytics on a public playbook stay private to each user.
 
-User settings cover timezone, the soft enforcement toggle, and the weekly review day and time. There is no per-user Discord setting: Discord is one shared server for public alerts only.
+User settings cover timezone, the soft enforcement toggle, and the weekly review day and time. There is no per-user Discord setting: Discord is one shared server for public alert events only.
 
 ## Data model
 
@@ -38,4 +38,4 @@ Table conventions and the index of all entities are in [data-model.md](../refere
 ## Related
 
 - [Scheduling and time](scheduling-and-time.md) for how user timezones are used
-- [Alerts](alerts.md#public-and-private-alerts) for which alerts are public and which are private
+- [Alerts](alerts.md#public-and-private-alert-events) for which alert events are public and which are private
