@@ -264,7 +264,7 @@ These are deferred to their own design session:
 - Where sizing rules such as "at most 2% of the account" get the account's value from, for a field such as `trade.max_loss_account_ratio` ([ADR 0007](../adr/0007-rules-dont-do-arithmetic.md)). Nothing in the data model holds it yet.
 - Where soft enforcement records a rule whose result was unknown, since it isn't a violation.
 
-How trigger state is stored is an open question on the [alerts](alerts.md#open-questions) page.
+How each trigger remembers whether it can fire again is described on the [alerts](alerts.md#triggers) page.
 
 ## Data model
 

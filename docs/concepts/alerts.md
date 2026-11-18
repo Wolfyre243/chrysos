@@ -54,8 +54,12 @@ Management triggers (a playbook's management rules, checked against each open po
 - A trigger fires when its result goes from false to true for one subject, such as one ticker or one position.
 - It can't fire again until it has been false and the cooldown since its last firing has passed.
 - Unknown results neither fire nor count as false, so a data outage between two true results doesn't raise a second alert event.
+- A new trigger starts ready to fire, so a condition that is already true when an alert is created fires on the first check.
+- A trigger that goes false during its cooldown fires on the first true check after the cooldown ends.
 - The cooldown belongs to whatever raises the event, never to the rule: an alert's `cooldown_seconds`, or for management triggers the system-wide `management_trigger_cooldown` [setting](../references/data-model.md#appsetting), one day by default.
 - Alert events report changes. Whether a rule is still true is shown as current rule status, on the position page and in session digests.
+
+Each trigger keeps one [TriggerState](#triggerstate) row per subject, recording whether it is armed (ready to fire). Its last firing time isn't stored; it is the latest alert event raised from that row.
 
 Other firing modes, such as on every evaluation while true, at most once a day, or once only, are future options.
 
@@ -72,14 +76,6 @@ Every alert event is either public or private, following the [data ownership](us
 - In-app notifications come later as a second `Notifier` channel, and carry private alert events. Until then, private alert events are recorded but not pushed; the user sees them in the app (screener results, digests, the review page, position rule status).
 - Every delivery is logged with status and errors.
 
-## Open questions
-
-- Where trigger state is stored. Each trigger has to remember, per subject, whether it has been false since it last fired. One alert has many triggers (one per rule for each ticker in its scope), and an open position has one per management rule, so the state can't be a single column on Alert or Position. Two options:
-  - A `TriggerState` table keyed by owner (an alert, or none for a position's management rules), subject (a ticker or a position) and rule key, holding only whether the trigger is armed. Each alert event a trigger raises points at its row, so the last firing time is derived from the events.
-  - A `RuleSet` table that alerts, screeners and playbook versions all reference, with trigger state keyed by rule set, rule key and subject. This depends on how playbook versions store rules, so it is decided with the [playbook design](playbooks.md#open-questions).
-- How an alert event records which trigger raised it. This follows from the choice above.
-- Proposed but not yet confirmed: a new trigger starts armed, so a condition already true the first time it is checked fires once; and a trigger that becomes false during its cooldown fires on the first true result after the cooldown ends.
-
 ## Data model
 
 Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
@@ -95,7 +91,16 @@ A user's standing watch. Private to its owner.
 - `is_enabled`
 - `rules` (JSONB, a rule set; each rule is read as a trigger)
 
-Trigger state isn't modelled yet (see open questions); it replaces the old `last_triggered_at`.
+### TriggerState
+One trigger watching one subject: a rule of an alert, or a management rule of an open position, checked against one ticker or one position. Replaces the old `AlertRule.last_triggered_at`, which couldn't track an alert scoped to many tickers.
+- `id`
+- `alert_id` → Alert (nullable; null for a position's management triggers, whose rules come from the playbook version the position was entered under)
+- `position_id` → Position (nullable; set when the subject is a position)
+- `symbol` → Ticker (nullable; set when the subject is a ticker)
+- `rule_key` (the rule's key in the alert, or its ref in the position's playbook version)
+- `armed` (true when created, false once it fires, true again after a false result)
+
+Exactly one of `position_id` and `symbol` is set, and a row without an `alert_id` has a `position_id`. Unique on (`alert_id`, `position_id`, `symbol`, `rule_key`), with nulls treated as equal (`NULLS NOT DISTINCT`). The last firing time is derived from the latest AlertEvent pointing at the row.
 
 ### AlertEvent
 One thing the user is told about.
@@ -103,8 +108,7 @@ One thing the user is told about.
 - `visibility` (public, private)
 - `user_id` → User (required when private; null when public)
 - `kind` (news, alert, management_trigger, screener_hit, review_reminder)
-- `alert_id` → Alert (nullable)
-- `position_id` → Position (nullable)
+- `trigger_state_id` → TriggerState (nullable; set for alert and management_trigger events, and through it the alert or position and the rule that fired)
 - `article_id` → NewsArticle (nullable)
 - `screener_run_id` → ScreenerRun (nullable; one batched event per run)
 - `payload` (JSONB)
@@ -119,6 +123,17 @@ One thing the user is told about.
 - `status` (pending, sent, failed)
 - `sent_at`
 - `error`
+
+## Alternative: a RuleSet table
+
+A viable alternative to TriggerState's owner column, to weigh together with the [playbook design](playbooks.md#open-questions): rule sets become a table of their own, and every owner points at one.
+
+- `Alert`, `Screener` (custom rules) and `PlaybookVersion` (entry, sizing and management rules) each reference `RuleSet` rows holding the rules.
+- Trigger state is then keyed by rule set, rule key and subject, so it no longer names each kind of owner; a position's management triggers point at the rule set of the version it was entered under.
+- `RuleViolation` could point at a rule set and rule key the same way, instead of a ref string.
+- It isn't adopted yet because it changes how playbook versions store rules. If the playbook design moves to rule set rows, `TriggerState.alert_id` becomes a `rule_set_id`.
+
+Owners can't instead hold a single `trigger_id` pointing at their state: each alert has one trigger state per rule per ticker in scope, and each position one per management rule, so the foreign key has to sit on TriggerState.
 
 ## Related
 

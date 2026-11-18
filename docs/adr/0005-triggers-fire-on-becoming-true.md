@@ -5,15 +5,17 @@
 
 ## Context
 
-A trigger is a rule read on its own, such as a management rule or a user's alert rule: a true result raises an alert. Triggers are evaluated again and again, so a rule that stays true for days, or a value that hovers around its threshold, could raise the same alert over and over.
+A trigger is a rule read on its own, such as a management rule or one of a user's alert's rules: a true result raises an alert event. Triggers are evaluated again and again, so a rule that stays true for days, or a value that hovers around its threshold, could raise the same alert event over and over.
 
 ## Decision
 
 - A trigger fires when its result goes from false to true for a subject (one ticker or one position).
 - After firing, it can't fire again until it has been false and the cooldown since its last firing has passed.
-- Unknown results neither fire nor count as false, so a data outage between two true results doesn't raise a second alert.
-- The cooldown belongs to whatever raises the alert, never to the rule, so a rule has the same format wherever it is used.
-- Alerts report changes. Whether a rule is still true is shown as current rule status, on the position page and in session digests.
+- Unknown results neither fire nor count as false, so a data outage between two true results doesn't raise a second alert event.
+- A new trigger starts ready to fire, so a condition that is already true when an alert is created fires on the first check.
+- A trigger that goes false during its cooldown fires on the first true check after the cooldown ends.
+- The cooldown belongs to whatever raises the alert event, never to the rule, so a rule has the same format wherever it is used.
+- Alert events report changes. Whether a rule is still true is shown as current rule status, on the position page and in session digests.
 
 ## Considered options
 
