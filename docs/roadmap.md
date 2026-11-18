@@ -29,6 +29,7 @@ The data layer here should be done quick to prototype the entire system, but kep
 
 - In-app notifications for private alerts: management rule triggers, screener hits, digests, review and position reminders, user alert rules and news on held tickers or private watchlists
 - Per-user notification settings (which alerts each user receives and where). Not designed yet; Discord stays the group feed for public alerts.
+- More ways for a trigger to fire: on every evaluation while true, at most once a day, or once only (see [ADR 0005](adr/0005-triggers-fire-on-becoming-true.md))
 - Playbook extras, if the simple model falls short: one-click apply for suggestions, following a public playbook with personal overrides, and an optional cooling-off period before structural edits apply
 - Fundamentals indicators (P/E) and the health score, once a fundamentals source is confirmed
 - Research files (a business summary per ticker, shown with the notes that mention it)

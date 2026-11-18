@@ -37,6 +37,7 @@ Architecture decision records: why the design is the way it is.
 - [0002: Rules have no severity; users disable them instead](adr/0002-rules-without-severity.md)
 - [0003: Rules don't pin indicator versions](adr/0003-rules-dont-pin-indicator-versions.md)
 - [0004: Rules are written and stored as JSON only](adr/0004-rules-are-json-only.md)
+- [0005: Triggers fire when they become true, with a cooldown](adr/0005-triggers-fire-on-becoming-true.md)
 
 ## Other
 
