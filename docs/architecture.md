@@ -50,11 +50,7 @@ Broker credentials, if ever added, are read-only. Chrysos records trades and nev
 
 #### moomoo OpenD
 
-To verify:
-
-- moomoo OpenAPI request limits for chain and snapshot calls.
-- Whether the moomoo account is entitled to live US options quotes (OPRA).
-- Whether moomoo provides fundamentals and consensus earnings estimates. If not, they need a second `MarketDataProvider` implementation.
+> Open: see [OQ-006](open-questions.md#oq-006)
 
 ### LLM
 
@@ -67,4 +63,6 @@ To verify:
 
 ### News feeds
 
-Candidate sources are CNBC, MarketWatch, Nasdaq, Fed press releases, SEC EDGAR, and per-ticker feeds from Yahoo Finance and Google News. Reuters discontinued its public RSS feeds around 2020 and needs an alternative. Avoid scraping the Unusual Whales Discord or site; replicating their calculations from raw data is the cleaner path.
+Candidate sources are CNBC, MarketWatch, Nasdaq, Fed press releases, SEC EDGAR, and per-ticker feeds from Yahoo Finance and Google News. Avoid scraping the Unusual Whales Discord or site; replicating their calculations from raw data is the cleaner path.
+
+> Open: see [OQ-007](open-questions.md#oq-007)

@@ -10,7 +10,7 @@ Every indicator or calculator is a plugin registered in code. Once registered, i
 | ------------ | --------------------------------------------------------------------------------------------------------- |
 | `id`, `name` | Identifier and display name                                                                               |
 | `version`    | Bumped whenever the formula changes                                                                       |
-| `scope`      | `stock`, `option` or `spread` (may be dropped once rule subjects are settled; see [rule engine](rule-engine.md#open-questions)) |
+| `scope`      | `stock`, `option` or `spread` (may be dropped; see [OQ-003](../open-questions.md#oq-003)) |
 | `requires`   | Data needed, from the shared set: `quote`, `price_history`, `earnings`, `fundamentals`, `chain`           |
 | `args`       | Argument schema, such as the two legs forward factor compares                                             |
 | `output`     | `scalar`, `per_strike_series` or `term_curve`                                                             |

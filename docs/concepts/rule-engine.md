@@ -46,6 +46,8 @@ A field's id is its group's `prefix` plus its name, such as `ticker.price`, so i
 | `trade` | trade | `net_debit`, `max_loss`, `quantity`, `min_leg_open_interest`, `max_leg_spread_ratio` |
 | `position` | position | `pnl`, `pnl_ratio`, `days_held` |
 
+> Open: see [OQ-002](../open-questions.md#oq-002) (what "trade" means) and [OQ-004](../open-questions.md#oq-004) (the account value behind sizing fields)
+
 Each field declares:
 
 - `type`: `number`, `integer`, `bool`, `date` or `enum` (a value from a declared list).
@@ -206,7 +208,10 @@ Null is different: the value genuinely doesn't exist, such as an earnings date t
 What each feature does with unknown:
 
 - Screener: the ticker doesn't pass.
-- Soft enforcement: it isn't a violation. It is recorded as unevaluated, so it counts neither for nor against adherence; where it is recorded is an [open question](#open-questions).
+- Soft enforcement: it isn't a violation. It is recorded as unevaluated, so it counts neither for nor against adherence.
+
+  > Open: see [OQ-005](../open-questions.md#oq-005)
+
 - Triggers: unknown never fires and doesn't count as false.
 
 ## Evaluation
@@ -216,10 +221,12 @@ What each feature does with unknown:
 ```python
 @dataclass(frozen=True)
 class EvalContext:
-  subject: Subject  # what the rule is about (see open questions)
+  subject: Subject  # what the rule is about (see OQ-001)
   params: dict[str, Value]  # the playbook version's params; {} otherwise
   data: MarketData  # cached quotes, chains, earnings, positions
 ```
+
+> Open: see [OQ-001](../open-questions.md#oq-001)
 
 Each operand is resolved as listed under [operands](#operands): a param from `ctx.params`, a field through the field catalog, an indicator by computing it from its resolved args. `and` and `or` stop as soon as the result is decided, so a failing cheap check means a chain is never fetched.
 
@@ -254,18 +261,6 @@ Bob has a private screener on her playbook with two custom rules: `price_below_3
 3. Stage 2 runs only on those 80. The edge's selectors pick legs for each one (for AMZN, say, front 2026-12-18 and back 2027-01-15, both 210 calls). The engine fetches just those chains and evaluates the stage 2 rules. AMZN's forward factor is 0.34, which passes both `> 0.2` and `> 0.3`; AAPL's 0.27 passes Alice's rule but not Bob's.
 4. Each ticker that passes every rule is saved as a `ScreenerResult` with its proposed legs, its indicator metrics and a rank.
 
-## Open questions
-
-These are deferred to their own design session:
-
-- Evaluation subjects: what a rule is evaluated against, and how the screener, soft enforcement, management triggers and alerts each build one and read from it in code. Working draft: three nested subjects, `ticker` (one underlying), `trade` (a ticker plus legs, proposed by selectors or filled) and `position` (a trade's current open legs plus its executions and P&L). A subject identifies what a rule is about (the symbol, the legs, the position); field and indicator values are read from the data layer when a rule asks for them. The session should produce a worked example of each feature in code.
-- Whether "trade" is narrowed to mean a ticker plus legs. About 15 places in the docs use "trade" for what is really a position (closed trades, trades in progress, journaling trades against a playbook), and `TradeGrade` grades a position.
-- Whether indicators still need a `scope` (stock, option, spread) once subjects are settled, since every subject has a ticker and legs reach an indicator as args.
-- Where sizing rules such as "at most 2% of the account" get the account's value from, for a field such as `trade.max_loss_account_ratio` ([ADR 0007](../adr/0007-rules-dont-do-arithmetic.md)). Nothing in the data model holds it yet.
-- Where soft enforcement records a rule whose result was unknown, since it isn't a violation.
-
-How each trigger remembers whether it can fire again is described on the [alerts](alerts.md#triggers) page.
-
 ## Data model
 
 Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
@@ -280,7 +275,7 @@ Table conventions and the index of all entities are in [data-model.md](../refere
 ### Field
 *(code)* A value rules can read, declared in a field group.
 - `id` (`<prefix>.<name>`, such as `ticker.price`)
-- `subject` (ticker, trade or position; a working draft, see open questions)
+- `subject` (ticker, trade or position; a working draft, see [OQ-001](../open-questions.md#oq-001))
 - `per_leg`
 - `type` (number, integer, bool, date, enum)
 - `unit`
