@@ -104,21 +104,6 @@ A playbook is private by default. Its owner can make it public, like a [watchlis
 - Once another user has a position on a public playbook, it can't be made private or deleted, so their trades always point at something they can see. The owner archives it instead (`is_active = false`): no new entries and no screener, but existing references still resolve. A public playbook nobody else has used can be switched back to private or deleted freely.
 - A public playbook can have one public screener, whose hits go to the shared Discord server (see [screener](screener.md#public-and-private-screeners)).
 
-## Open questions
-
-The [rule engine](rule-engine.md) was redesigned first (ADRs [0002](../adr/0002-rules-without-severity.md) to [0007](../adr/0007-rules-dont-do-arithmetic.md)); this page hasn't been revisited since, so parts of it still describe the old rule format. Settled so far: edges and add-ons are playbook blocks that own their default rules, and those rules are written as JSON. Still to design:
-
-- Params: how a block declares them (`params_schema`), how a playbook version holds their values, and how rules reference them. The rule engine design proposed that blocks declare params, playbook versions give them values, and rules point at them with param operands. Also open: whether users can declare their own params (today a user rule such as "forward factor below 3" can only use a literal), and what happens when an edge and an add-on declare the same param name.
-- Rule ownership in a playbook version: how a resolved version records which block each rule came from, so refs such as `edge:forward_factor/ff_above_min` can be formed. Options include a flat list of refs, rules grouped by owner, or a `RuleSet` table that playbook versions, screeners and alerts all reference, which would also change how trigger state is keyed (see [the alternative on the alerts page](alerts.md#alternative-a-ruleset-table)). The choice also fixes the format of override keys and `RuleViolation.rule_ref`.
-- Block files: where each block's JSON lives, and how it is loaded and checked at startup and in tests ([ADR 0004](../adr/0004-rules-are-json-only.md)).
-- Edited block rules: how a rule the user has edited receives later block updates, and how orphaned overrides are detected now that rules have keys.
-- Leg selectors: their format. They are still strings using the old `$params` syntax (`nearest(dte=$params.front_dte)`), while rules now use typed operands.
-- Leg slots across structures: slot names belong to each structure, so an edge gives selectors per structure. Can one edge rule work on several structures, such as a calendar and a double calendar, without a copy per structure?
-- Structure fields: how a structure's `exposes` relates to the shared [field catalog](rule-engine.md#fields), for structure-specific values such as a vertical's width.
-- Sizing: where the account's value comes from, for rules such as "max loss at most 2% of the account" (also open on the [rule engine](rule-engine.md#open-questions) page).
-- Naming the rules a user adds to their own playbook: "custom rule" now means a screener's own rules.
-- Management actions: whether a management rule can name the action it suggests, such as close or roll, using the structure's `actions`.
-
 ## Data model
 
 Table conventions and the index of all entities are in [data-model.md](../references/data-model.md).
